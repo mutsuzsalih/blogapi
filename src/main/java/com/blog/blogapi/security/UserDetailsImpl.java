@@ -17,7 +17,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Şimdilik roller yoksa boş bırakıyoruz
+        
         return Collections.emptyList();
     }
 

@@ -32,7 +32,7 @@ public class AuthController {
                             loginRequest.getPassword()
                     )
             );
-            // Başarılıysa JWT üret ve döndür
+           
             return jwtUtil.generateToken(loginRequest.getUsername());
         } catch (AuthenticationException e) {
             return "Kullanıcı adı veya şifre hatalı!";
