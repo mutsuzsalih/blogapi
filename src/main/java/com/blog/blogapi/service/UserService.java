@@ -19,6 +19,10 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    public User findUserById(Long id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
@@ -68,5 +72,10 @@ public class UserService {
             throw new RuntimeException("User not found");
         }
         userRepository.deleteById(id);
+    }
+    public Long findIdByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+        return user.getId();
     }
 } 
