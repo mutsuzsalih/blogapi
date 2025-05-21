@@ -1,60 +1,48 @@
 package com.blog.blogapi.controller;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.blog.blogapi.dto.LoginRequest;
-import com.blog.blogapi.security.JwtUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.*;
-import com.blog.blogapi.dto.RegisterRequest;
-import com.blog.blogapi.model.User;
-import com.blog.blogapi.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.blog.blogapi.dto.LoginResponse;
+import com.blog.blogapi.dto.UserRegistrationRequest;
+import com.blog.blogapi.dto.UserResponse;
+import com.blog.blogapi.service.AuthService;
+import com.blog.blogapi.service.UserService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
+@RequiredArgsConstructor
+@Tag(name = "Authentication", description = "APIs for user authentication")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private final AuthService authService;
+    private final UserService userService;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
+    @Operation(
+        summary = "User login",
+        description = "Authenticates a user and returns JWT token"
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Login successful"
+    )
     @PostMapping("/login")
-    public String login(@RequestBody LoginRequest loginRequest) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            loginRequest.getUsername(),
-                            loginRequest.getPassword()
-                    )
-            );
-           
-            return jwtUtil.generateToken(loginRequest.getUsername());
-        } catch (AuthenticationException e) {
-            return "Kullanıcı adı veya şifre hatalı!";
-        }
-        
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
-    @Autowired
-private UserRepository userRepository;
 
-@Autowired
-private PasswordEncoder passwordEncoder;
-
-@PostMapping("/register")
-public String register(@RequestBody RegisterRequest registerRequest) {
-    if (userRepository.findByUsername(registerRequest.getUsername()).isPresent()) {
-        return "Bu kullanıcı adı zaten alınmış!";
+    @PostMapping("/register")
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRegistrationRequest request) {
+        return ResponseEntity.ok(userService.registerUser(request));
     }
-    User user = new User();
-    user.setUsername(registerRequest.getUsername());
-    user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-    user.setEmail(registerRequest.getEmail());
-    userRepository.save(user);
-    return "Kayıt başarılı!";
-}
 }

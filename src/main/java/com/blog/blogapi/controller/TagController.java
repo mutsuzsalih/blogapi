@@ -1,44 +1,86 @@
 package com.blog.blogapi.controller;
 
-import com.blog.blogapi.model.Tag;
-import com.blog.blogapi.repository.TagRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
-
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.blog.blogapi.dto.TagRequest;
+import com.blog.blogapi.dto.TagResponse;
+import com.blog.blogapi.service.TagService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
-@RequestMapping("/tags")
+@RequestMapping("/api/tags")
+@Tag(name = "Tag Management", description = "APIs for managing tags")
 public class TagController {
 
-    @Autowired
-    private TagRepository tagRepository;
+    private final TagService tagService;
 
-    @GetMapping
-    public List<Tag> getAllTags() {
-        return tagRepository.findAll();
+    public TagController(TagService tagService) {
+        this.tagService = tagService;
     }
 
+    @Operation(
+        summary = "Create a new tag",
+        description = "Creates a new tag with the provided name"
+    )
     @PostMapping
-    public Tag createTag(@RequestBody Tag tag) {
-        return tagRepository.save(tag);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<TagResponse> createTag(@RequestBody TagRequest request) {
+        TagResponse response = tagService.createTag(request);
+        return ResponseEntity.ok(response);
     }
 
+    @Operation(
+        summary = "Get tag by ID",
+        description = "Retrieves tag details by its ID"
+    )
+    @GetMapping("/{id}")
+    public ResponseEntity<TagResponse> getTagById(@PathVariable Long id) {
+        TagResponse response = tagService.getTagById(id);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "Get all tags",
+        description = "Retrieves a list of all tags"
+    )
+    @GetMapping
+    public ResponseEntity<List<TagResponse>> getAllTags() {
+        List<TagResponse> responses = tagService.getAllTags();
+        return ResponseEntity.ok(responses);
+    }
+
+    @Operation(
+        summary = "Update tag",
+        description = "Updates an existing tag with new details"
+    )
     @PutMapping("/{id}")
-    public ResponseEntity<Tag> updateTag(@PathVariable Long id, @RequestBody Tag tagDetails) {
-        return tagRepository.findById(id)
-            .map(tag -> {
-                tag.setName(tagDetails.getName());
-                Tag updatedTag = tagRepository.save(tag);
-                return ResponseEntity.ok(updatedTag);
-            })
-            .orElse(ResponseEntity.notFound().build());
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<TagResponse> updateTag(@PathVariable Long id, @RequestBody TagRequest request) {
+        TagResponse response = tagService.updateTag(id, request);
+        return ResponseEntity.ok(response);
     }
 
+    @Operation(
+        summary = "Delete tag",
+        description = "Deletes a tag by its ID"
+    )
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTag(@PathVariable Long id) {
-        tagRepository.deleteById(id);
-        return ResponseEntity.ok().build();
+        tagService.deleteTag(id);
+        return ResponseEntity.noContent().build();
     }
 }
