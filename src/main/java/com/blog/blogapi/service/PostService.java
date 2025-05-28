@@ -41,16 +41,16 @@ public class PostService {
     }
 
     private boolean isAdmin(User user) {
-        return user.getRole().name().equals("ADMIN"); // Role enum ADMIN stringi ile karşılaştır
+        return user.getRole().name().equals("ADMIN"); 
     }
 
     public PostResponse createPost(PostRequest request) {
         User currentUser = getCurrentUser();
-        // Author zaten SecurityContext'ten gelen kullanıcı olacak
+        
         Post post = new Post();
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
-        post.setAuthor(currentUser); // Postun yazarını set et
+        post.setAuthor(currentUser); 
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
@@ -80,7 +80,7 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
 
-        // Yetki kontrolü: Ya ADMIN olacak ya da postun sahibi olacak
+        
         if (!isAdmin(currentUser) && !post.getAuthor().getId().equals(currentUser.getId())) {
             throw new AccessDeniedException("You do not have permission to update this post.");
         }
@@ -91,9 +91,7 @@ public class PostService {
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
             post.setTags(new HashSet<>(tags));
         } else {
-            // Eğer tagId'ler boş geliyorsa ve postta tag varsa, mevcut tagları temizle.
-            // Eğer null geliyorsa ve tagları değiştirmek istemiyorsa, mevcut tagları koru.
-            // Bu kısım isteğe bağlı, şimdilik basitçe boş set atayalım.
+ 
             post.setTags(new HashSet<>()); 
         }
         Post updated = postRepository.save(post);
@@ -105,7 +103,7 @@ public class PostService {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
 
-        // Yetki kontrolü: Ya ADMIN olacak ya da postun sahibi olacak
+       
         if (!isAdmin(currentUser) && !post.getAuthor().getId().equals(currentUser.getId())) {
             throw new AccessDeniedException("You do not have permission to delete this post.");
         }
@@ -118,7 +116,7 @@ public class PostService {
         dto.setId(post.getId());
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
-        // Yazar null değilse ID ve kullanıcı adını al
+        
         if (post.getAuthor() != null) {
             dto.setAuthorId(post.getAuthor().getId());
             dto.setAuthorUsername(post.getAuthor().getUsername());
