@@ -20,14 +20,13 @@ import jakarta.annotation.PostConstruct;
 public class JwtUtil {
 
     @Value("${jwt.secret}")
-    private String SECRET_KEY_FROM_PROPERTIES; // Farklı bir isim verelim karışmasın
+    private String SECRET_KEY_FROM_PROPERTIES;
 
     private String SECRET_KEY;
 
     @PostConstruct
     public void init() {
         this.SECRET_KEY = SECRET_KEY_FROM_PROPERTIES;
-        System.out.println("### Yüklenen SECRET_KEY (uzunluk: " + this.SECRET_KEY.length() + "): [\"" + this.SECRET_KEY + "\"]");
     }
 
     public String extractUsername(String token) {
@@ -49,7 +48,6 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        System.out.println("### extractAllClaims kullanilan SECRET_KEY: [\"" + SECRET_KEY + "\"]");
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY)
                 .parseClaimsJws(token)
@@ -64,7 +62,6 @@ public class JwtUtil {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", "ROLE_" + user.getRole().name());
         String token = createToken(claims, user.getUsername());
-        System.out.println("### Üretilen Token (JwtUtil): " + token); // GEÇİCİ LOGLAMA
         return token;
     }
 
