@@ -14,12 +14,20 @@ import com.blog.blogapi.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class JwtUtil {
 
     @Value("${jwt.secret}")
+    private String SECRET_KEY_FROM_PROPERTIES;
+
     private String SECRET_KEY;
+
+    @PostConstruct
+    public void init() {
+        this.SECRET_KEY = SECRET_KEY_FROM_PROPERTIES;
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -52,8 +60,9 @@ public class JwtUtil {
 
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getRole().name());
-        return createToken(claims, user.getUsername());
+        claims.put("role", "ROLE_" + user.getRole().name());
+        String token = createToken(claims, user.getUsername());
+        return token;
     }
 
     public String generateToken(String username) {

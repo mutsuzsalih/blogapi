@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,15 +33,24 @@ public class PostService {
         this.tagRepository = tagRepository;
     }
 
-    public PostResponse createPost(PostRequest request) {
-        Long authorId = 1L; // TODO: Get authorId from JWT in real project
-        User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new RuntimeException("Author not found"));
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Authenticated user not found in database"));
+    }
 
+    private boolean isAdmin(User user) {
+        return user.getRole().name().equals("ADMIN"); 
+    }
+
+    public PostResponse createPost(PostRequest request) {
+        User currentUser = getCurrentUser();
+        
         Post post = new Post();
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
-        post.setAuthor(author);
+        post.setAuthor(currentUser); 
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
@@ -64,23 +76,38 @@ public class PostService {
     }
 
     public PostResponse updatePost(Long id, PostRequest request) {
+        User currentUser = getCurrentUser();
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
+
+        
+        if (!isAdmin(currentUser) && !post.getAuthor().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You do not have permission to update this post.");
+        }
+
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
             post.setTags(new HashSet<>(tags));
         } else {
-            post.setTags(new HashSet<>());
+ 
+            post.setTags(new HashSet<>()); 
         }
         Post updated = postRepository.save(post);
         return toPostResponse(updated);
     }
 
     public void deletePost(Long id) {
+        User currentUser = getCurrentUser();
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
+
+       
+        if (!isAdmin(currentUser) && !post.getAuthor().getId().equals(currentUser.getId())) {
+            throw new AccessDeniedException("You do not have permission to delete this post.");
+        }
+
         postRepository.delete(post);
     }
 
@@ -89,8 +116,11 @@ public class PostService {
         dto.setId(post.getId());
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
-        dto.setAuthorId(post.getAuthor().getId());
-        dto.setAuthorUsername(post.getAuthor().getUsername());
+        
+        if (post.getAuthor() != null) {
+            dto.setAuthorId(post.getAuthor().getId());
+            dto.setAuthorUsername(post.getAuthor().getUsername());
+        }
         Set<Tag> tags = post.getTags();
         if (tags != null && !tags.isEmpty()) {
             List<String> tagNames = tags.stream()

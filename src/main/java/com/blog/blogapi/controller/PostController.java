@@ -39,8 +39,9 @@ public class PostController {
     )
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<PostResponse> createPost(@RequestBody PostRequest request) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
+    public 
+    ResponseEntity<PostResponse> createPost(@RequestBody PostRequest request) {
         PostResponse response = postService.createPost(request);
         return ResponseEntity.ok(response);
     }
@@ -63,7 +64,7 @@ public class PostController {
         description = "Retrieves a list of all posts"
     )
     @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<PostResponse>> getAllPosts() {
         List<PostResponse> responses = postService.getAllPosts();
@@ -76,7 +77,7 @@ public class PostController {
     )
     @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<PostResponse> updatePost(
         @Parameter(description = "Post ID", required = true) @PathVariable Long id,
         @RequestBody PostRequest request
@@ -91,7 +92,7 @@ public class PostController {
     )
     @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<Void> deletePost(
         @Parameter(description = "Post ID", required = true) @PathVariable Long id
     ) {
