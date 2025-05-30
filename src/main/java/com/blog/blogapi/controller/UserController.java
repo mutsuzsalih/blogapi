@@ -2,6 +2,7 @@ package com.blog.blogapi.controller;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,37 +33,24 @@ public class UserController {
         this.userService = userService;
     }
 
-    @Operation(
-        summary = "Register a new user",
-        description = "Creates a new user account with the provided details"
-    )
-    @ApiResponse(
-        responseCode = "201",
-        description = "User successfully registered"
-    )
+    @Operation(summary = "Register a new user", description = "Creates a new user account with the provided details")
+    @ApiResponse(responseCode = "201", description = "User successfully registered")
     @PostMapping("/register")
     public ResponseEntity<UserResponse> registerUser(@RequestBody UserRegistrationRequest request) {
-        return ResponseEntity.ok(userService.registerUser(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.registerUser(request));
     }
 
-    @Operation(
-        summary = "Get user by ID",
-        description = "Retrieves user details by their ID"
-    )
+    @Operation(summary = "Get user by ID", description = "Retrieves user details by their ID")
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> getUserById(
-        @Parameter(description = "User ID", required = true) @PathVariable Long id
-    ) {
+            @Parameter(description = "User ID", required = true) @PathVariable Long id) {
         UserResponse response = userService.getUserById(id);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-        summary = "Get all users",
-        description = "Retrieves a list of all users"
-    )
+    @Operation(summary = "Get all users", description = "Retrieves a list of all users")
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")

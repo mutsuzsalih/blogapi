@@ -60,4 +60,4 @@ public class PostValidationTest {
         Set<ConstraintViolation<Post>> violations = validator.validate(post);
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("content")));
     }
-} 
+}

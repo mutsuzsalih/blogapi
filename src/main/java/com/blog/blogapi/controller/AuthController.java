@@ -28,14 +28,8 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
 
-    @Operation(
-        summary = "User login",
-        description = "Authenticates a user and returns JWT token"
-    )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Login successful"
-    )
+    @Operation(summary = "User login", description = "Authenticates a user and returns JWT token")
+    @ApiResponse(responseCode = "200", description = "Login successful")
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));

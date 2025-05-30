@@ -50,7 +50,6 @@ public class User {
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL)
     private Set<Post> posts = new HashSet<>();
 
-    // Getter ve Setter'lar
     public Long getId() {
         return id;
     }

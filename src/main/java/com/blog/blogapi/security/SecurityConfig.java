@@ -33,38 +33,36 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                   "/api/auth/**",
-                    "/api/users/register",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html",
-                    "/swagger-ui/index.html",
-                    "/v3/api-docs/**",
-                    "/api-docs/**",
-                    "/swagger-resources/**",
-                    "/webjars/**",
-                    "/actuator/**",
-                    "/favicon.ico"
-                ).permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/posts/public/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/tags/public/**").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/tags/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT, "/api/tags/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/api/tags/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("ADMIN", "USER")
-                .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("ADMIN", "USER")
-                .requestMatchers(HttpMethod.DELETE, "/api/posts/**").hasAnyRole("ADMIN", "USER")
-                .requestMatchers(HttpMethod.GET, "/api/posts/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/tags/**").authenticated()
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/users/register",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/index.html",
+                                "/v3/api-docs/**",
+                                "/api-docs/**",
+                                "/swagger-resources/**",
+                                "/webjars/**",
+                                "/actuator/**",
+                                "/favicon.ico")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/posts/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/tags/public/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/tags/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/tags/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/tags/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/posts/**").hasAnyRole("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.GET, "/api/posts/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/tags/**").authenticated()
+                        .anyRequest().authenticated())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 

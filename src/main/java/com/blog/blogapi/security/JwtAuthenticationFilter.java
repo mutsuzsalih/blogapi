@@ -40,13 +40,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
+            @NonNull FilterChain filterChain) throws ServletException, IOException {
         final String authHeader = request.getHeader("Authorization");
 
         final String jwt;
         final String username;
-        
+
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -69,7 +68,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         } catch (SignatureException e) {
-            filterLogger.warn("JWT signature validation failed: {} for URI: {}", e.getMessage(), request.getRequestURI());
+            filterLogger.warn("JWT signature validation failed: {} for URI: {}", e.getMessage(),
+                    request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         } catch (IllegalArgumentException e) {
@@ -77,7 +77,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         } catch (Exception e) {
-            filterLogger.error("Unexpected error extracting username from JWT: {} for URI: {}", e.getMessage(), request.getRequestURI());
+            filterLogger.error("Unexpected error extracting username from JWT: {} for URI: {}", e.getMessage(),
+                    request.getRequestURI());
             filterChain.doFilter(request, response);
             return;
         }
@@ -97,7 +98,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             try {
-                if (jwtUtil.isTokenValid(jwt, userDetails)) { 
+                if (jwtUtil.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
@@ -105,10 +106,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 } else {
-                    filterLogger.warn("JWT is NOT valid (after user found) for user: {} for URI: {}", username, request.getRequestURI());
+                    filterLogger.warn("JWT is NOT valid (after user found) for user: {} for URI: {}", username,
+                            request.getRequestURI());
                 }
             } catch (Exception e) {
-                filterLogger.error("Error during final token validation or setting SecurityContext for user {}: {}", username, e.getMessage());
+                filterLogger.error("Error during final token validation or setting SecurityContext for user {}: {}",
+                        username, e.getMessage());
             }
         }
         filterChain.doFilter(request, response);

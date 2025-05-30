@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.blog.blogapi.aspect.RequiresPostOwnerOrAdmin;
 import com.blog.blogapi.dto.PostRequest;
 import com.blog.blogapi.dto.PostResponse;
 import com.blog.blogapi.model.Post;
@@ -40,17 +40,13 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("Authenticated user not found in database"));
     }
 
-    private boolean isAdmin(User user) {
-        return user.getRole().name().equals("ADMIN"); 
-    }
-
     public PostResponse createPost(PostRequest request) {
         User currentUser = getCurrentUser();
-        
+
         Post post = new Post();
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
-        post.setAuthor(currentUser); 
+        post.setAuthor(currentUser);
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
@@ -75,15 +71,10 @@ public class PostService {
                 .collect(Collectors.toList());
     }
 
+    @RequiresPostOwnerOrAdmin
     public PostResponse updatePost(Long id, PostRequest request) {
-        User currentUser = getCurrentUser();
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
-
-        
-        if (!isAdmin(currentUser) && !post.getAuthor().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("You do not have permission to update this post.");
-        }
 
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
@@ -91,22 +82,16 @@ public class PostService {
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
             post.setTags(new HashSet<>(tags));
         } else {
- 
-            post.setTags(new HashSet<>()); 
+            post.setTags(new HashSet<>());
         }
         Post updated = postRepository.save(post);
         return toPostResponse(updated);
     }
 
+    @RequiresPostOwnerOrAdmin
     public void deletePost(Long id) {
-        User currentUser = getCurrentUser();
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
-
-       
-        if (!isAdmin(currentUser) && !post.getAuthor().getId().equals(currentUser.getId())) {
-            throw new AccessDeniedException("You do not have permission to delete this post.");
-        }
 
         postRepository.delete(post);
     }
@@ -116,7 +101,7 @@ public class PostService {
         dto.setId(post.getId());
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
-        
+
         if (post.getAuthor() != null) {
             dto.setAuthorId(post.getAuthor().getId());
             dto.setAuthorUsername(post.getAuthor().getUsername());

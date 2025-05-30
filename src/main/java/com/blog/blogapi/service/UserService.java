@@ -35,25 +35,24 @@ public class UserService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword())); 
-        
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
         User saved = userRepository.save(user);
         return toUserResponse(saved);
     }
 
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found"));
         return toUserResponse(user);
     }
 
     public List<UserResponse> getAllUsers() {
         return userRepository.findAll().stream()
-            .map(this::toUserResponse)
-            .collect(Collectors.toList());
+                .map(this::toUserResponse)
+                .collect(Collectors.toList());
     }
 
-    
     private UserResponse toUserResponse(User user) {
         UserResponse dto = new UserResponse();
         dto.setId(user.getId());
