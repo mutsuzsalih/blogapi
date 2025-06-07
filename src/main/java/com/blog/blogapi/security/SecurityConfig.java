@@ -22,6 +22,24 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final String ADMIN = "ADMIN";
+    private static final String USER = "USER";
+    private static final String API_POSTS_PATH = "/api/posts/**";
+    private static final String API_TAGS_PATH = "/api/tags/**";
+    private static final String[] PUBLIC_PATHS = {
+            "/api/auth/**",
+            "/api/users/register",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/swagger-ui/index.html",
+            "/v3/api-docs/**",
+            "/api-docs/**",
+            "/swagger-resources/**",
+            "/webjars/**",
+            "/actuator/**",
+            "/favicon.ico"
+    };
+
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsService userDetailsService;
 
@@ -35,29 +53,18 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/users/register",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/index.html",
-                                "/v3/api-docs/**",
-                                "/api-docs/**",
-                                "/swagger-resources/**",
-                                "/webjars/**",
-                                "/actuator/**",
-                                "/favicon.ico")
+                        .requestMatchers(PUBLIC_PATHS)
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/tags/public/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/tags/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/tags/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/tags/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/posts/**").hasAnyRole("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.GET, "/api/posts/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/tags/**").authenticated()
+                        .requestMatchers(HttpMethod.POST, API_TAGS_PATH).hasRole(ADMIN)
+                        .requestMatchers(HttpMethod.PUT, API_TAGS_PATH).hasRole(ADMIN)
+                        .requestMatchers(HttpMethod.DELETE, API_TAGS_PATH).hasRole(ADMIN)
+                        .requestMatchers(HttpMethod.POST, API_POSTS_PATH).hasAnyRole(ADMIN, USER)
+                        .requestMatchers(HttpMethod.PUT, API_POSTS_PATH).hasAnyRole(ADMIN, USER)
+                        .requestMatchers(HttpMethod.DELETE, API_POSTS_PATH).hasAnyRole(ADMIN, USER)
+                        .requestMatchers(HttpMethod.GET, API_POSTS_PATH).authenticated()
+                        .requestMatchers(HttpMethod.GET, API_TAGS_PATH).authenticated()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

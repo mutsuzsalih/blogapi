@@ -3,45 +3,35 @@ package com.blog.blogapi.service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.blog.blogapi.aspect.RequiresPostOwnerOrAdmin;
 import com.blog.blogapi.dto.PostRequest;
 import com.blog.blogapi.dto.PostResponse;
+import com.blog.blogapi.exception.ResourceNotFoundException;
 import com.blog.blogapi.model.Post;
 import com.blog.blogapi.model.Tag;
 import com.blog.blogapi.model.User;
 import com.blog.blogapi.repository.PostRepository;
 import com.blog.blogapi.repository.TagRepository;
-import com.blog.blogapi.repository.UserRepository;
 
 @Service
 @Transactional
 public class PostService {
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final AuthorizationService authorizationService;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, TagRepository tagRepository) {
+    public PostService(PostRepository postRepository, TagRepository tagRepository,
+            AuthorizationService authorizationService) {
         this.postRepository = postRepository;
-        this.userRepository = userRepository;
         this.tagRepository = tagRepository;
-    }
-
-    private User getCurrentUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Authenticated user not found in database"));
+        this.authorizationService = authorizationService;
     }
 
     public PostResponse createPost(PostRequest request) {
-        User currentUser = getCurrentUser();
+        User currentUser = authorizationService.getCurrentUserOrThrow();
 
         Post post = new Post();
         post.setTitle(request.getTitle());
@@ -61,20 +51,20 @@ public class PostService {
 
     public PostResponse getPostById(Long id) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
         return toPostResponse(post);
     }
 
     public List<PostResponse> getAllPosts() {
         return postRepository.findAll().stream()
                 .map(this::toPostResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
-    @RequiresPostOwnerOrAdmin
     public PostResponse updatePost(Long id, PostRequest request) {
+        authorizationService.checkPostOwnerOrAdmin(id);
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
 
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
@@ -88,12 +78,13 @@ public class PostService {
         return toPostResponse(updated);
     }
 
-    @RequiresPostOwnerOrAdmin
     public void deletePost(Long id) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
-
-        postRepository.delete(post);
+        authorizationService.checkPostOwnerOrAdmin(id);
+        // checkPostOwnerOrAdmin çağrısı, postun varlığını ve yetkiyi kontrol eder.
+        // Eğer bir exception fırlatılmazsa, post vardır ve silinebilir.
+        // Bu nedenle, burada tekrar findById veya existsById yapmaya gerek yok.
+        // Sadece deleteById yeterlidir.
+        postRepository.deleteById(id);
     }
 
     private PostResponse toPostResponse(Post post) {
@@ -102,15 +93,15 @@ public class PostService {
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
 
-        if (post.getAuthor() != null) {
-            dto.setAuthorId(post.getAuthor().getId());
-            dto.setAuthorUsername(post.getAuthor().getUsername());
+        if (post.hasAuthor()) {
+            dto.setAuthorId(post.getAuthorId());
+            dto.setAuthorUsername(post.getAuthorUsername());
         }
         Set<Tag> tags = post.getTags();
         if (tags != null && !tags.isEmpty()) {
             List<String> tagNames = tags.stream()
                     .map(Tag::getName)
-                    .collect(Collectors.toList());
+                    .toList();
             dto.setTags(tagNames);
         } else {
             dto.setTags(List.of());

@@ -134,12 +134,15 @@ src
 │ ├── java
 │ │ └── com
 │ │ └── blogapi
-│ │ ├── controller
-│ │ ├── service
-│ │ ├── repository
-│ │ ├── model
+│ │ ├── aspect
 │ │ ├── config
-│ │ └── security
+│ │ ├── controller
+│ │ ├── dto
+│ │ ├── exception
+│ │ ├── model
+│ │ ├── repository
+│ │ ├── security
+│ │ └── service
 │ └── resources
 │ └── application.properties
 └── test

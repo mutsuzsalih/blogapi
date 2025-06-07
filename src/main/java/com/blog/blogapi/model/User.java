@@ -97,4 +97,16 @@ public class User {
     public void setPosts(Set<Post> posts) {
         this.posts = posts;
     }
+
+    public String getRoleForClaim() {
+        return "ROLE_" + this.role.name();
+    }
+
+    public String getRoleName() {
+        return this.role.name();
+    }
+
+    public boolean isAdmin() {
+        return this.role == Role.ADMIN;
+    }
 }

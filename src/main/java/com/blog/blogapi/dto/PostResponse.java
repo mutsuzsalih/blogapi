@@ -2,6 +2,9 @@ package com.blog.blogapi.dto;
 
 import java.util.List;
 
+import lombok.Data;
+
+@Data
 public class PostResponse {
 
     private Long id;

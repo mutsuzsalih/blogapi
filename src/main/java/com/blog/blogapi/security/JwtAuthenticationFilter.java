@@ -16,8 +16,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureException;
 import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,79 +41,56 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
 
-        final String jwt;
-        final String username;
+        extractTokenFromRequest(request)
+                .ifPresent(token -> validateTokenAndSetAuthentication(request, token));
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        jwt = authHeader.substring(7);
-
-        try {
-            username = jwtUtil.extractUsername(jwt);
-        } catch (ExpiredJwtException e) {
-            filterLogger.warn("JWT token is expired: {} for URI: {}", e.getMessage(), request.getRequestURI());
-            filterChain.doFilter(request, response);
-            return;
-        } catch (UnsupportedJwtException e) {
-            filterLogger.warn("Unsupported JWT token: {} for URI: {}", e.getMessage(), request.getRequestURI());
-            filterChain.doFilter(request, response);
-            return;
-        } catch (MalformedJwtException e) {
-            filterLogger.warn("Malformed JWT token: {} for URI: {}", e.getMessage(), request.getRequestURI());
-            filterChain.doFilter(request, response);
-            return;
-        } catch (SignatureException e) {
-            filterLogger.warn("JWT signature validation failed: {} for URI: {}", e.getMessage(),
-                    request.getRequestURI());
-            filterChain.doFilter(request, response);
-            return;
-        } catch (IllegalArgumentException e) {
-            filterLogger.warn("Invalid JWT token: {} for URI: {}", e.getMessage(), request.getRequestURI());
-            filterChain.doFilter(request, response);
-            return;
-        } catch (Exception e) {
-            filterLogger.error("Unexpected error extracting username from JWT: {} for URI: {}", e.getMessage(),
-                    request.getRequestURI());
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails;
-            try {
-                userDetails = this.userDetailsService.loadUserByUsername(username);
-            } catch (UsernameNotFoundException e) {
-                filterLogger.warn("User not found for JWT: {}, username: {}", e.getMessage(), username);
-                filterChain.doFilter(request, response);
-                return;
-            } catch (Exception e) {
-                filterLogger.error("Error loading UserDetails for username {}: {}", username, e.getMessage());
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            try {
-                if (jwtUtil.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities());
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else {
-                    filterLogger.warn("JWT is NOT valid (after user found) for user: {} for URI: {}", username,
-                            request.getRequestURI());
-                }
-            } catch (Exception e) {
-                filterLogger.error("Error during final token validation or setting SecurityContext for user {}: {}",
-                        username, e.getMessage());
-            }
-        }
         filterChain.doFilter(request, response);
+    }
+
+    private java.util.Optional<String> extractTokenFromRequest(HttpServletRequest request) {
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(authHeader.substring(7));
+    }
+
+    private void validateTokenAndSetAuthentication(HttpServletRequest request, String jwt) {
+        final String username = extractUsername(jwt, request);
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            UserDetails userDetails = loadUserDetails(username, request);
+            if (userDetails != null && Boolean.TRUE.equals(jwtUtil.isTokenValid(jwt, userDetails))) {
+                setAuthentication(request, userDetails);
+            }
+        }
+    }
+
+    private String extractUsername(String jwt, HttpServletRequest request) {
+        try {
+            return jwtUtil.extractUsername(jwt);
+        } catch (ExpiredJwtException | UnsupportedJwtException | MalformedJwtException | SignatureException
+                | IllegalArgumentException e) {
+            filterLogger.warn("JWT validation error: {} for URI: {}", e.getMessage(), request.getRequestURI());
+        }
+        return null;
+    }
+
+    private UserDetails loadUserDetails(String username, HttpServletRequest request) {
+        try {
+            return this.userDetailsService.loadUserByUsername(username);
+        } catch (UsernameNotFoundException e) {
+            filterLogger.warn("User not found for JWT: {}, username: {}", e.getMessage(), username);
+        }
+        return null;
+    }
+
+    private void setAuthentication(HttpServletRequest request, UserDetails userDetails) {
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities());
+        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 }

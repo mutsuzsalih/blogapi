@@ -79,4 +79,20 @@ public class Post {
     public void setTags(Set<Tag> tags) {
         this.tags = tags;
     }
+
+    public boolean hasAuthor() {
+        return this.author != null;
+    }
+
+    public boolean isAuthoredBy(User user) {
+        return hasAuthor() && this.author.getId().equals(user.getId());
+    }
+
+    public Long getAuthorId() {
+        return hasAuthor() ? this.author.getId() : null;
+    }
+
+    public String getAuthorUsername() {
+        return hasAuthor() ? this.author.getUsername() : null;
+    }
 }
