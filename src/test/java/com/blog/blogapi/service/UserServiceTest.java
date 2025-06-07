@@ -31,10 +31,8 @@ import com.blog.blogapi.model.Role;
 import com.blog.blogapi.model.User;
 import com.blog.blogapi.repository.UserRepository;
 
-// @SpringBootTest // Birim testleri için genellikle kaldırılır
-// @ActiveProfiles("test") // Birim testleri için genellikle kaldırılır
-@ExtendWith(MockitoExtension.class) // Mockito entegrasyonu için
-class UserServiceTest { // public kaldırıldı
+@ExtendWith(MockitoExtension.class)
+class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;

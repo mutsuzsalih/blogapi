@@ -3,7 +3,7 @@ package com.blog.blogapi.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
-@ResponseStatus(HttpStatus.NOT_FOUND) // HTTP 404 durum kodu döndürmesi için
+@ResponseStatus(HttpStatus.NOT_FOUND)
 public class ResourceNotFoundException extends RuntimeException {
 
     public ResourceNotFoundException(String message) {

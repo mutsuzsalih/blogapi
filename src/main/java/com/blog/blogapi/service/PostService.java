@@ -80,10 +80,7 @@ public class PostService {
 
     public void deletePost(Long id) {
         authorizationService.checkPostOwnerOrAdmin(id);
-        // checkPostOwnerOrAdmin çağrısı, postun varlığını ve yetkiyi kontrol eder.
-        // Eğer bir exception fırlatılmazsa, post vardır ve silinebilir.
-        // Bu nedenle, burada tekrar findById veya existsById yapmaya gerek yok.
-        // Sadece deleteById yeterlidir.
+
         postRepository.deleteById(id);
     }
 
