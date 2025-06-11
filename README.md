@@ -25,6 +25,8 @@ A blog API developed with Spring Boot and PostgreSQL. This API includes user man
 - Maven
 - JWT
 - Docker
+- AWS (ECS, RDS, S3)
+- Terraform
 - Swagger/OpenAPI
 - JUnit 5
 
@@ -34,6 +36,7 @@ A blog API developed with Spring Boot and PostgreSQL. This API includes user man
 - Maven
 - PostgreSQL
 - Docker (optional)
+- AWS CLI & Terraform (for cloud deployment)
 
 ## 🚀 Getting Started
 
@@ -64,6 +67,32 @@ spring.datasource.password=2150
 docker-compose up --build
 ```
 - Log files are stored on the host as `logs/app.log` when using Docker.
+
+### Deploying to AWS (Terraform)
+
+This project is configured for automated deployment to AWS.
+
+1. Setup Infrastructure (First Time Only):
+This command provisions all the necessary AWS resources (VPC, Database, Cluster, etc.). It can take 5-10 minutes.
+```bash
+cd terraform
+terraform init
+terraform apply
+```
+
+2. Deploy or Update the Application:
+After making code changes, run the `deploy.ps1` script from the project root to deploy the new version.
+```bash
+# From project root
+./deploy.ps1
+```
+
+3. Destroy Infrastructure:
+To remove all created AWS resources and avoid costs, run the destroy command from the `terraform` directory.
+```bash
+cd terraform
+terraform destroy
+```
 
 ## 📖 API Usage
 
@@ -123,7 +152,6 @@ To run all unit and validation tests:
 ```bash
 ./mvnw test
 ```
-
 - Validation tests: All entity validation rules are covered in `src/test/java/com/blog/blogapi/model/*ValidationTest.java` files.
 - Test rules: Setup, initialization, assertion, and independent tests are applied.
 

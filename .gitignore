@@ -74,3 +74,11 @@ application-prod.properties
 
 ### Env ###
 .env*
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+*.tfplan
