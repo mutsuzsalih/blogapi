@@ -1,182 +1,19 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.5"
-    }
+
+# resource "aws_instance" "backend" {
+#   ...
+# }
+#
+# resource "aws_security_group" "ec2_sg" {
+#   ...
+# }
+
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"] # Canonical
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
   }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
-resource "aws_ecr_repository" "app_ecr_repo" {
-  name                 = "${var.project_name}-repo"
-  image_tag_mutability = "MUTABLE"
-  force_delete         = true
-}
-
-resource "aws_ecs_cluster" "main" {
-  name = "${var.project_name}-cluster"
-}
-
-resource "aws_ecs_task_definition" "app_task" {
-  family                   = "${var.project_name}-task"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-
-  container_definitions = jsonencode([
-    {
-      name      = "${var.project_name}-container"
-      image     = "${aws_ecr_repository.app_ecr_repo.repository_url}:latest"
-      essential = true
-      portMappings = [
-        {
-          containerPort = 8080
-          hostPort      = 8080
-        }
-      ],
-      logConfiguration = {
-        logDriver = "awslogs",
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.logs.name,
-          "awslogs-region"        = var.aws_region,
-          "awslogs-stream-prefix" = "ecs"
-        }
-      },
-      environment = [
-        {
-          name  = "SPRING_DATASOURCE_URL",
-          value = "jdbc:postgresql://${aws_db_instance.main.address}:${aws_db_instance.main.port}/${aws_db_instance.main.db_name}"
-        },
-        {
-          name  = "SPRING_DATASOURCE_USERNAME",
-          value = var.db_user
-        },
-        {
-          name = "SPRING_JPA_HIBERNATE_DDL_AUTO",
-          value = "update"
-        }
-      ],
-      secrets = [
-        {
-          name      = "SPRING_DATASOURCE_PASSWORD",
-          valueFrom = aws_secretsmanager_secret_version.db_password_version.arn
-        }
-      ]
-    }
-  ])
-}
-
-resource "aws_ecs_service" "main" {
-  name            = "${var.project_name}-service"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.app_task.arn
-  launch_type     = "FARGATE"
-  desired_count   = 1
-
-  network_configuration {
-    subnets         = data.aws_subnets.default.ids
-    security_groups = [aws_security_group.service_sg.id]
-    assign_public_ip = true
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.app_tg.arn
-    container_name   = "${var.project_name}-container"
-    container_port   = 8080
-  }
-
-  depends_on = [aws_lb_listener.http]
-}
-
-resource "aws_security_group" "service_sg" {
-  name        = "${var.project_name}-service-sg"
-  description = "Allow inbound traffic for the ECS service"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    security_groups = [aws_security_group.lb_sg.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_lb" "app_lb" {
-  name               = "${var.project_name}-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = data.aws_subnets.default.ids
-}
-
-resource "aws_security_group" "lb_sg" {
-  name        = "${var.project_name}-lb-sg"
-  description = "Allow http inbound traffic for the load balancer"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_lb_target_group" "app_tg" {
-  name        = "${var.project_name}-tg"
-  port        = 80
-  protocol    = "HTTP"
-  vpc_id      = data.aws_vpc.default.id
-  target_type = "ip"
-
-  health_check {
-    path                = "/actuator/health"
-    protocol            = "HTTP"
-    matcher             = "200"
-    interval            = 30
-    timeout             = 5
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-}
-
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.app_lb.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app_tg.arn
-  }
-}
-
-resource "aws_cloudwatch_log_group" "logs" {
-  name = "/ecs/${var.project_name}"
 }
 
 data "aws_vpc" "default" {
@@ -190,30 +27,7 @@ data "aws_subnets" "default" {
   }
 }
 
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${var.project_name}-ecs-task-execution-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-# --- Database Resources ---
-
+# RDS (Free Tier)
 resource "aws_db_instance" "main" {
   allocated_storage    = 10
   engine               = "postgres"
@@ -225,23 +39,19 @@ resource "aws_db_instance" "main" {
   skip_final_snapshot  = true
   vpc_security_group_ids = [aws_security_group.db_sg.id]
   publicly_accessible  = false
-  depends_on = [
-    aws_secretsmanager_secret_version.db_password_version
-  ]
 }
 
 resource "aws_security_group" "db_sg" {
   name        = "${var.project_name}-db-sg"
-  description = "Allow inbound traffic from the ECS service to the DB"
+  description = "Allow inbound traffic from EC2 to the DB"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.service_sg.id]
+    security_groups = [aws_security_group.ecs_sg.id]
   }
-
   egress {
     from_port   = 0
     to_port     = 0
@@ -250,43 +60,136 @@ resource "aws_security_group" "db_sg" {
   }
 }
 
-# --- Secrets Manager ---
-
 resource "random_password" "db_password" {
   length           = 16
   special          = true
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-resource "aws_secretsmanager_secret" "db_password_secret" {
-  name = "${var.project_name}-db-password-${random_pet.this.id}"
+# ECR repository (Docker image'ını buraya push edeceksin)
+resource "aws_ecr_repository" "app" {
+  name = "${var.project_name}-repo"
 }
 
-resource "aws_secretsmanager_secret_version" "db_password_version" {
-  secret_id     = aws_secretsmanager_secret.db_password_secret.id
-  secret_string = random_password.db_password.result
+# ECS Cluster (EC2 launch type)
+resource "aws_ecs_cluster" "main" {
+  name = "${var.project_name}-cluster"
 }
 
-# --- IAM Policy Update ---
-
-resource "aws_iam_role_policy" "secrets_manager_policy" {
-  name = "${var.project_name}-secrets-manager-policy"
-  role = aws_iam_role.ecs_task_execution_role.id
-
-  policy = jsonencode({
+# IAM role for ECS EC2 instances
+resource "aws_iam_role" "ecs_instance_role" {
+  name = "${var.project_name}-ecs-instance-role"
+  assume_role_policy = jsonencode({
     Version = "2012-10-17",
-    Statement = [
-      {
-        Action = [
-          "secretsmanager:GetSecretValue"
-        ],
-        Effect   = "Allow",
-        Resource = aws_secretsmanager_secret.db_password_secret.arn
-      }
-    ]
+    Statement = [{
+      Effect = "Allow",
+      Principal = { Service = "ec2.amazonaws.com" },
+      Action = "sts:AssumeRole"
+    }]
   })
 }
 
-resource "random_pet" "this" {
-  length = 2
+resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy" {
+  role       = aws_iam_role.ecs_instance_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
+}
+
+# IAM instance profile for ECS EC2
+resource "aws_iam_instance_profile" "ecs_instance_profile" {
+  name = "${var.project_name}-ecs-instance-profile"
+  role = aws_iam_role.ecs_instance_role.name
+}
+
+# Security group for ECS EC2
+resource "aws_security_group" "ecs_sg" {
+  name        = "${var.project_name}-ecs-sg"
+  description = "Allow HTTP/8080 and SSH"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Launch Template for ECS EC2 instance (t2.micro, free tier)
+resource "aws_launch_template" "ecs" {
+  name_prefix   = "${var.project_name}-ecs-lt-"
+  image_id      = data.aws_ami.ecs.id
+  instance_type = "t2.micro"
+  key_name      = var.ec2_key_name
+  iam_instance_profile {
+    name = aws_iam_instance_profile.ecs_instance_profile.name
+  }
+  vpc_security_group_ids = [aws_security_group.ecs_sg.id]
+  user_data = base64encode("#!/bin/bash\necho ECS_CLUSTER=${var.project_name}-cluster >> /etc/ecs/ecs.config\n")
+}
+
+data "aws_ami" "ecs" {
+  most_recent = true
+  owners      = ["591542846629"] # Amazon ECS AMIs
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-ecs-hvm-*-x86_64-ebs"]
+  }
+}
+
+# Auto Scaling Group (tek t2.micro, free tier)
+resource "aws_autoscaling_group" "ecs" {
+  name                      = "${var.project_name}-ecs-asg"
+  max_size                  = 1
+  min_size                  = 1
+  desired_capacity          = 1
+  vpc_zone_identifier       = data.aws_subnets.default.ids
+  launch_template {
+    id      = aws_launch_template.ecs.id
+    version = "$Latest"
+  }
+  tag {
+    key                 = "Name"
+    value               = "${var.project_name}-ecs-ec2"
+    propagate_at_launch = true
+  }
+}
+
+# ECS Task Definition (örnek, image'ı ECR'dan çekecek)
+resource "aws_ecs_task_definition" "app" {
+  family                   = "${var.project_name}-task"
+  network_mode             = "bridge"
+  requires_compatibilities = ["EC2"]
+  cpu                      = "256"
+  memory                   = "512"
+  container_definitions = jsonencode([
+    {
+      name      = "${var.project_name}-container"
+      image     = "${aws_ecr_repository.app.repository_url}:latest"
+      essential = true
+      portMappings = [{ containerPort = 8080, hostPort = 8080 }]
+    }
+  ])
+}
+
+# ECS Service (tek task)
+resource "aws_ecs_service" "app" {
+  name            = "${var.project_name}-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.app.arn
+  desired_count   = 1
+  launch_type     = "EC2"
+  deployment_minimum_healthy_percent = 0
+  deployment_maximum_percent         = 100
 } 

@@ -1,51 +1,31 @@
 # deploy.ps1 - PowerShell script to deploy the application to AWS ECS
 
-# Variables
-$aws_region = "us-east-1"
-$aws_account_id = "986527150026"
-$project_name = "blogapi"
-$ecr_repo_name = "blogapi-repo"
-$ecs_cluster_name = "blogapi-cluster"
-$ecs_service_name = "blogapi-service"
+# Config
+$REGION = "us-east-1"
+$ACCOUNT_ID = "986527150026"
+$REPO = "blogapi-repo"
+$CLUSTER = "blogapi-cluster"
+$SERVICE = "blogapi-service"
+$ECR_URI = "$ACCOUNT_ID.dkr.ecr.$REGION.amazonaws.com/$REPO"
 
-# ECR repository URI
-$ecr_repo_uri = "$aws_account_id.dkr.ecr.$aws_region.amazonaws.com/$ecr_repo_name"
+# ECR login
+Write-Host "ECR login..."
+aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_URI
 
-# Step 1: Build Spring Boot application
-Write-Host "Building Spring Boot application..."
-./mvnw.cmd clean package
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: Maven build failed." -ForegroundColor Red
-    exit 1
-}
+# Build image
+Write-Host "Building image..."
+docker build -t blogapi .
 
-# Step 2: Build Docker image
-Write-Host "Building Docker image..."
-docker build -t $project_name .
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: Docker build failed." -ForegroundColor Red
-    exit 1
-}
+# Tag image
+Write-Host "Tagging image..."
+docker tag blogapi:latest "$ECR_URI:latest"
 
-# Step 3: Log in to AWS ECR
-Write-Host "Logging in to AWS ECR..."
-aws ecr get-login-password --region $aws_region | docker login --username AWS --password-stdin $ecr_repo_uri
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: Docker login failed. Check Docker Desktop is running and your system clock is correct." -ForegroundColor Red
-    exit 1
-}
+# Push image
+Write-Host "Pushing to ECR..."
+docker push "$ECR_URI:latest"
 
-# Step 4: Tag and Push Docker image
-Write-Host "Tagging and pushing Docker image to ECR..."
-docker tag "${project_name}:latest" "${ecr_repo_uri}:latest"
-docker push "${ecr_repo_uri}:latest"
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "ERROR: Docker push to ECR failed." -ForegroundColor Red
-    exit 1
-}
+# ECS deploy
+Write-Host "Updating ECS service..."
+aws ecs update-service --cluster $CLUSTER --service $SERVICE --force-new-deployment --region $REGION
 
-# Step 5: Force new deployment on ECS
-Write-Host "Forcing new deployment on ECS service..."
-aws ecs update-service --cluster $ecs_cluster_name --service $ecs_service_name --force-new-deployment --region $aws_region
-
-Write-Host "Deployment successfully triggered. Changes should be live in a few minutes." -ForegroundColor Green 
+Write-Host "Done." 

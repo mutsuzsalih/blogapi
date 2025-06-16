@@ -20,4 +20,9 @@ variable "db_user" {
   description = "The username for the database"
   type        = string
   default     = "postgres"
+}
+
+variable "ec2_key_name" {
+  description = "EC2 instance için kullanılacak SSH key pair adı"
+  type        = string
 } 
