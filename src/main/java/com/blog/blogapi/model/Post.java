@@ -31,20 +31,15 @@ public class Post {
     @Size(min = 10, message = "Content must be at least 10 characters")
     private String content;
 
-    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
     private User author;
 
     @ManyToMany
-    @JoinTable(
-        name = "post_tags",
-        joinColumns = @JoinColumn(name = "post_id"),
-        inverseJoinColumns = @JoinColumn(name = "tag_id")
-    )
+    @JoinTable(name = "post_tags", joinColumns = @JoinColumn(name = "post_id"), inverseJoinColumns = @JoinColumn(name = "tag_id"))
     private Set<Tag> tags = new HashSet<>();
 
-    // Getter ve Setter'lar
     public Long getId() {
         return id;
     }
@@ -83,5 +78,21 @@ public class Post {
 
     public void setTags(Set<Tag> tags) {
         this.tags = tags;
+    }
+
+    public boolean hasAuthor() {
+        return this.author != null;
+    }
+
+    public boolean isAuthoredBy(User user) {
+        return hasAuthor() && this.author.getId().equals(user.getId());
+    }
+
+    public Long getAuthorId() {
+        return hasAuthor() ? this.author.getId() : null;
+    }
+
+    public String getAuthorUsername() {
+        return hasAuthor() ? this.author.getUsername() : null;
     }
 }

@@ -33,68 +33,50 @@ public class PostController {
         this.postService = postService;
     }
 
-    @Operation(
-        summary = "Create a new post",
-        description = "Creates a new blog post with the provided details"
-    )
+    @Operation(summary = "Create a new post", description = "Creates a new blog post with the provided details")
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<PostResponse> createPost(@RequestBody PostRequest request) {
         PostResponse response = postService.createPost(request);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-        summary = "Get post by ID",
-        description = "Retrieves post details by its ID"
-    )
+    @Operation(summary = "Get post by ID", description = "Retrieves post details by its ID")
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/{id}")
     public ResponseEntity<PostResponse> getPostById(
-        @Parameter(description = "Post ID", required = true) @PathVariable Long id
-    ) {
+            @Parameter(description = "Post ID", required = true) @PathVariable Long id) {
         PostResponse response = postService.getPostById(id);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-        summary = "Get all posts",
-        description = "Retrieves a list of all posts"
-    )
+    @Operation(summary = "Get all posts", description = "Retrieves a list of all posts")
     @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     @GetMapping
     public ResponseEntity<List<PostResponse>> getAllPosts() {
         List<PostResponse> responses = postService.getAllPosts();
         return ResponseEntity.ok(responses);
     }
 
-    @Operation(
-        summary = "Update post",
-        description = "Updates an existing post with new details"
-    )
+    @Operation(summary = "Update post", description = "Updates an existing post with new details")
     @SecurityRequirement(name = "bearerAuth")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<PostResponse> updatePost(
-        @Parameter(description = "Post ID", required = true) @PathVariable Long id,
-        @RequestBody PostRequest request
-    ) {
+            @Parameter(description = "Post ID", required = true) @PathVariable Long id,
+            @RequestBody PostRequest request) {
         PostResponse response = postService.updatePost(id, request);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-        summary = "Delete post",
-        description = "Deletes a post by its ID"
-    )
+    @Operation(summary = "Delete post", description = "Deletes a post by its ID")
     @SecurityRequirement(name = "bearerAuth")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<Void> deletePost(
-        @Parameter(description = "Post ID", required = true) @PathVariable Long id
-    ) {
+            @Parameter(description = "Post ID", required = true) @PathVariable Long id) {
         postService.deletePost(id);
         return ResponseEntity.noContent().build();
     }

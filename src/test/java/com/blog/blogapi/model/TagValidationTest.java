@@ -38,4 +38,4 @@ public class TagValidationTest {
         Set<ConstraintViolation<Tag>> violations = validator.validate(tag);
         assertTrue(violations.stream().anyMatch(v -> v.getPropertyPath().toString().equals("name")));
     }
-} 
+}

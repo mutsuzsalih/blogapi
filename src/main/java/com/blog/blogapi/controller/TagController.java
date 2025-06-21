@@ -31,10 +31,7 @@ public class TagController {
         this.tagService = tagService;
     }
 
-    @Operation(
-        summary = "Create a new tag",
-        description = "Creates a new tag with the provided name"
-    )
+    @Operation(summary = "Create a new tag", description = "Creates a new tag with the provided name")
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TagResponse> createTag(@RequestBody TagRequest request) {
@@ -42,30 +39,21 @@ public class TagController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-        summary = "Get tag by ID",
-        description = "Retrieves tag details by its ID"
-    )
+    @Operation(summary = "Get tag by ID", description = "Retrieves tag details by its ID")
     @GetMapping("/{id}")
     public ResponseEntity<TagResponse> getTagById(@PathVariable Long id) {
         TagResponse response = tagService.getTagById(id);
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-        summary = "Get all tags",
-        description = "Retrieves a list of all tags"
-    )
+    @Operation(summary = "Get all tags", description = "Retrieves a list of all tags")
     @GetMapping
     public ResponseEntity<List<TagResponse>> getAllTags() {
         List<TagResponse> responses = tagService.getAllTags();
         return ResponseEntity.ok(responses);
     }
 
-    @Operation(
-        summary = "Update tag",
-        description = "Updates an existing tag with new details"
-    )
+    @Operation(summary = "Update tag", description = "Updates an existing tag with new details")
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<TagResponse> updateTag(@PathVariable Long id, @RequestBody TagRequest request) {
@@ -73,10 +61,7 @@ public class TagController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(
-        summary = "Delete tag",
-        description = "Deletes a tag by its ID"
-    )
+    @Operation(summary = "Delete tag", description = "Deletes a tag by its ID")
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTag(@PathVariable Long id) {

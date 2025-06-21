@@ -1,13 +1,12 @@
-version: '3.8'
 services:
   db:
     image: postgres
     ports:
       - "5433:5432"
     environment:
-      POSTGRES_DB: blogdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 2150
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -19,9 +18,10 @@ services:
     depends_on:
       - db
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/blogdb
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: 2150
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
     volumes:
       - ./logs:/app/logs
 

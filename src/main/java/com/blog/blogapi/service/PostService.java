@@ -3,42 +3,40 @@ package com.blog.blogapi.service;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.blog.blogapi.dto.PostRequest;
 import com.blog.blogapi.dto.PostResponse;
+import com.blog.blogapi.exception.ResourceNotFoundException;
 import com.blog.blogapi.model.Post;
 import com.blog.blogapi.model.Tag;
 import com.blog.blogapi.model.User;
 import com.blog.blogapi.repository.PostRepository;
 import com.blog.blogapi.repository.TagRepository;
-import com.blog.blogapi.repository.UserRepository;
 
 @Service
 @Transactional
 public class PostService {
     private final PostRepository postRepository;
-    private final UserRepository userRepository;
     private final TagRepository tagRepository;
+    private final AuthorizationService authorizationService;
 
-    public PostService(PostRepository postRepository, UserRepository userRepository, TagRepository tagRepository) {
+    public PostService(PostRepository postRepository, TagRepository tagRepository,
+            AuthorizationService authorizationService) {
         this.postRepository = postRepository;
-        this.userRepository = userRepository;
         this.tagRepository = tagRepository;
+        this.authorizationService = authorizationService;
     }
 
     public PostResponse createPost(PostRequest request) {
-        Long authorId = 1L; // TODO: Get authorId from JWT in real project
-        User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new RuntimeException("Author not found"));
+        User currentUser = authorizationService.getCurrentUserOrThrow();
 
         Post post = new Post();
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
-        post.setAuthor(author);
+        post.setAuthor(currentUser);
 
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
             List<Tag> tags = tagRepository.findAllById(request.getTagIds());
@@ -53,19 +51,21 @@ public class PostService {
 
     public PostResponse getPostById(Long id) {
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
         return toPostResponse(post);
     }
 
     public List<PostResponse> getAllPosts() {
         return postRepository.findAll().stream()
                 .map(this::toPostResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public PostResponse updatePost(Long id, PostRequest request) {
+        authorizationService.checkPostOwnerOrAdmin(id);
         Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Post", "id", id));
+
         post.setTitle(request.getTitle());
         post.setContent(request.getContent());
         if (request.getTagIds() != null && !request.getTagIds().isEmpty()) {
@@ -79,9 +79,9 @@ public class PostService {
     }
 
     public void deletePost(Long id) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Post not found"));
-        postRepository.delete(post);
+        authorizationService.checkPostOwnerOrAdmin(id);
+
+        postRepository.deleteById(id);
     }
 
     private PostResponse toPostResponse(Post post) {
@@ -89,13 +89,16 @@ public class PostService {
         dto.setId(post.getId());
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
-        dto.setAuthorId(post.getAuthor().getId());
-        dto.setAuthorUsername(post.getAuthor().getUsername());
+
+        if (post.hasAuthor()) {
+            dto.setAuthorId(post.getAuthorId());
+            dto.setAuthorUsername(post.getAuthorUsername());
+        }
         Set<Tag> tags = post.getTags();
         if (tags != null && !tags.isEmpty()) {
             List<String> tagNames = tags.stream()
                     .map(Tag::getName)
-                    .collect(Collectors.toList());
+                    .toList();
             dto.setTags(tagNames);
         } else {
             dto.setTags(List.of());

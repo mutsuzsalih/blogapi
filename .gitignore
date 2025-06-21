@@ -62,7 +62,6 @@ Thumbs.db
 application-local.properties
 application-dev.properties
 application-prod.properties
-
 ### Test outputs ###
 /test/
 
@@ -75,3 +74,11 @@ application-prod.properties
 
 ### Env ###
 .env*
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+*.tfplan

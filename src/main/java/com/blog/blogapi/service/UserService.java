@@ -1,7 +1,6 @@
 package com.blog.blogapi.service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.blog.blogapi.dto.UserRegistrationRequest;
 import com.blog.blogapi.dto.UserResponse;
+import com.blog.blogapi.exception.DuplicateResourceException;
+import com.blog.blogapi.exception.ResourceNotFoundException;
 import com.blog.blogapi.model.User;
 import com.blog.blogapi.repository.UserRepository;
 
@@ -18,48 +19,52 @@ import com.blog.blogapi.repository.UserRepository;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthorizationService authorizationService;
 
     @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+            AuthorizationService authorizationService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.authorizationService = authorizationService;
     }
 
     public UserResponse registerUser(UserRegistrationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new DuplicateResourceException("User", "username", request.getUsername());
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new DuplicateResourceException("User", "email", request.getEmail());
         }
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword())); 
-        
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
         User saved = userRepository.save(user);
         return toUserResponse(saved);
     }
 
     public UserResponse getUserById(Long id) {
+        authorizationService.checkAdmin();
         User user = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", id));
         return toUserResponse(user);
     }
 
     public List<UserResponse> getAllUsers() {
+        authorizationService.checkAdmin();
         return userRepository.findAll().stream()
-            .map(this::toUserResponse)
-            .collect(Collectors.toList());
+                .map(this::toUserResponse)
+                .toList();
     }
 
-    
     private UserResponse toUserResponse(User user) {
         UserResponse dto = new UserResponse();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
-        dto.setRole(user.getRole() != null ? user.getRole().toString() : null);
+        dto.setRole(user.getRole() != null ? user.getRoleName() : null);
         return dto;
     }
 }
