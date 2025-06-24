@@ -1,4 +1,3 @@
-
 # resource "aws_instance" "backend" {
 #   ...
 # }
@@ -66,7 +65,7 @@ resource "random_password" "db_password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
-# ECR repository (Docker image'ını buraya push edeceksin)
+# ECR repository to store the Docker image
 resource "aws_ecr_repository" "app" {
   name = "${var.project_name}-repo"
 }
@@ -148,7 +147,7 @@ data "aws_ami" "ecs" {
   }
 }
 
-# Auto Scaling Group (tek t2.micro, free tier)
+# Auto Scaling Group (single t2.micro, free tier)
 resource "aws_autoscaling_group" "ecs" {
   name                      = "${var.project_name}-ecs-asg"
   max_size                  = 1
@@ -166,7 +165,7 @@ resource "aws_autoscaling_group" "ecs" {
   }
 }
 
-# ECS Task Definition (örnek, image'ı ECR'dan çekecek)
+# ECS Task Definition (pulls image from ECR)
 resource "aws_ecs_task_definition" "app" {
   family                   = "${var.project_name}-task"
   network_mode             = "bridge"
@@ -183,7 +182,7 @@ resource "aws_ecs_task_definition" "app" {
   ])
 }
 
-# ECS Service (tek task)
+# ECS Service (single task)
 resource "aws_ecs_service" "app" {
   name            = "${var.project_name}-service"
   cluster         = aws_ecs_cluster.main.id
