@@ -81,4 +81,8 @@ application-prod.properties
 *.tfstate.*
 crash.log
 *.tfvars
-*.tfplan
+*.tfvars.json
+override.tf
+override.tf.json
+.terraformrc
+terraform.rc
