@@ -23,6 +23,6 @@ variable "db_user" {
 }
 
 variable "ec2_key_name" {
-  description = "EC2 instance için kullanılacak SSH key pair adı"
+  description = "The name of the SSH key pair for the EC2 instance"
   type        = string
 } 
