@@ -69,7 +69,13 @@ resource "aws_iam_role_policy" "codebuild_policy" {
       {
         Effect   = "Allow",
         Action   = [
-            "ecr:GetAuthorizationToken",
+          "ecr:GetAuthorizationToken"
+        ],
+        Resource = "*"
+      },
+      {
+        Effect   = "Allow",
+        Action   = [
             "ecr:BatchCheckLayerAvailability",
             "ecr:GetDownloadUrlForLayer",
             "ecr:GetRepositoryPolicy",
@@ -146,20 +152,21 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
         ],
         Resource = aws_ecs_service.app.id
       },
-       {
-            "Effect": "Allow",
-            "Action": [
-                "iam:PassRole"
-            ],
-            "Resource": "*",
-            "Condition": {
-                "StringEqualsIfExists": {
-                    "iam:PassedToService": [
-                        "ecs-tasks.amazonaws.com"
-                    ]
-                }
-            }
-        }
+      {
+        Effect   = "Allow",
+        Action   = [
+            "ecs:DescribeTaskDefinition",
+            "ecs:RegisterTaskDefinition"
+        ],
+        Resource = "*"
+      },
+      {
+        "Effect": "Allow",
+        "Action": [ "iam:PassRole" ],
+        "Resource": [
+          aws_iam_role.ecs_task_execution_role.arn
+        ]
+      }
     ]
   })
 }

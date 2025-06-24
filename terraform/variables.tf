@@ -23,6 +23,12 @@ variable "db_user" {
 }
 
 variable "ec2_key_name" {
-  description = "The name of the SSH key pair for the EC2 instance"
+  description = "Name of the EC2 key pair to use for the ECS instances"
   type        = string
+}
+
+variable "jwt_secret" {
+  description = "Secret key for JWT generation and validation"
+  type        = string
+  sensitive   = true
 } 
