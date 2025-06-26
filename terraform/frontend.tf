@@ -25,29 +25,20 @@ resource "aws_s3_bucket_public_access_block" "frontend_bucket_public_access" {
 }
 
 
-# CloudFront Origin Access Control
-resource "aws_cloudfront_origin_access_control" "oac" {
-  name                              = "OAC for ${aws_s3_bucket.frontend_bucket.id}"
-  description                       = "Origin Access Control for S3 bucket"
-  origin_access_control_origin_type = "s3"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
+# CloudFront Origin Access Identity (OAI)
+resource "aws_cloudfront_origin_access_identity" "oai" {
+  comment = "OAI for ${aws_s3_bucket.frontend_bucket.id}"
 }
 
-# S3 bucket policy to grant CloudFront OAC read access to the bucket objects
+# S3 bucket policy to grant CloudFront OAI read access to the bucket objects
 data "aws_iam_policy_document" "s3_policy" {
   statement {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.frontend_bucket.arn}/*"]
 
     principals {
-      type        = "Service"
-      identifiers = ["cloudfront.amazonaws.com"]
-    }
-    condition {
-      test     = "ArnLike"
-      variable = "AWS:SourceArn"
-      values   = [aws_cloudfront_distribution.s3_distribution.arn]
+      type        = "AWS"
+      identifiers = [aws_cloudfront_origin_access_identity.oai.iam_arn]
     }
   }
 }
@@ -60,9 +51,12 @@ resource "aws_s3_bucket_policy" "bucket_policy" {
 # CloudFront distribution
 resource "aws_cloudfront_distribution" "s3_distribution" {
   origin {
-    domain_name              = aws_s3_bucket.frontend_bucket.bucket_regional_domain_name
-    origin_id                = "S3-${aws_s3_bucket.frontend_bucket.id}"
-    origin_access_control_id = aws_cloudfront_origin_access_control.oac.id
+    domain_name = aws_s3_bucket.frontend_bucket.bucket_regional_domain_name
+    origin_id   = "S3-${aws_s3_bucket.frontend_bucket.id}"
+
+    s3_origin_config {
+      origin_access_identity = aws_cloudfront_origin_access_identity.oai.cloudfront_access_identity_path
+    }
   }
 
   enabled             = true
