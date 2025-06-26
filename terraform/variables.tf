@@ -17,9 +17,14 @@ variable "db_name" {
 }
 
 variable "db_user" {
-  description = "The username for the database"
+  description = "Username for the RDS database"
   type        = string
-  default     = "postgres"
+}
+
+variable "db_password" {
+  description = "Password for the RDS database"
+  type        = string
+  sensitive   = true
 }
 
 variable "ec2_key_name" {
