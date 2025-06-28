@@ -212,8 +212,8 @@ resource "aws_ecs_task_definition" "app" {
   network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
   cpu                      = "256" # Keep CPU low for t2.micro
-  memory                   = "512" # REDUCED MEMORY: This is the key change to fit within t2.micro.
-                                   # You MUST ensure your application uses <= 512MB RAM.
+  memory                   = "450" # REDUCED MEMORY: To ensure it fits on a t2.micro with OS/agent overhead.
+
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   container_definitions = jsonencode([
     {
@@ -238,12 +238,10 @@ resource "aws_ecs_task_definition" "app" {
           name  = "JWT_SECRET"
           value = var.jwt_secret
         },
-        # OPTIONAL: Add JAVA_OPTS to control JVM memory within the container
-        # This is critical if your Spring Boot app defaults to higher memory.
-        # Ensure this value is <= your 'memory' setting in the task definition (e.g., 384m if memory=512)
+        # Ensure this value is <= your 'memory' setting in the task definition
         {
           name  = "JAVA_OPTS"
-          value = "-Xmx384m -Xms384m"
+          value = "-Xmx320m -Xms320m"
         }
       ]
       logConfiguration = {
