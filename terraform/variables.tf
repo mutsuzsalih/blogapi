@@ -3,7 +3,7 @@ variable "project_name" {
   type        = string
   default     = "blogapi"
 }
- 
+
 variable "aws_region" {
   description = "The AWS region to deploy resources"
   type        = string

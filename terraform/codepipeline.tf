@@ -53,8 +53,8 @@ resource "aws_iam_role_policy" "codebuild_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "s3:GetObject",
           "s3:GetObjectVersion",
           "s3:PutObject",
@@ -67,26 +67,26 @@ resource "aws_iam_role_policy" "codebuild_policy" {
         ]
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ecr:GetAuthorizationToken"
         ],
         Resource = "*"
       },
       {
-        Effect   = "Allow",
-        Action   = [
-            "ecr:BatchCheckLayerAvailability",
-            "ecr:GetDownloadUrlForLayer",
-            "ecr:GetRepositoryPolicy",
-            "ecr:DescribeRepositories",
-            "ecr:ListImages",
-            "ecr:DescribeImages",
-            "ecr:BatchGetImage",
-            "ecr:InitiateLayerUpload",
-            "ecr:UploadLayerPart",
-            "ecr:CompleteLayerUpload",
-            "ecr:PutImage"
+        Effect = "Allow",
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:GetRepositoryPolicy",
+          "ecr:DescribeRepositories",
+          "ecr:ListImages",
+          "ecr:DescribeImages",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
         ],
         Resource = aws_ecr_repository.app.arn
       },
@@ -124,8 +124,8 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "s3:GetObject",
           "s3:GetObjectVersion",
           "s3:GetBucketVersioning",
@@ -137,33 +137,33 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
         ]
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "codebuild:StartBuild",
           "codebuild:BatchGetBuilds"
         ],
         Resource = aws_codebuild_project.app.arn
       },
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ecs:DescribeServices",
           "ecs:UpdateService"
         ],
         Resource = aws_ecs_service.app.id
       },
       {
-        Effect   = "Allow",
-        Action   = [
-            "ecs:DescribeTaskDefinition",
-            "ecs:RegisterTaskDefinition"
+        Effect = "Allow",
+        Action = [
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition"
         ],
         Resource = "*"
       },
       {
-        "Effect": "Allow",
-        "Action": [ "iam:PassRole" ],
-        "Resource": [
+        "Effect" : "Allow",
+        "Action" : ["iam:PassRole"],
+        "Resource" : [
           aws_iam_role.ecs_task_execution_role.arn
         ]
       }
@@ -188,7 +188,7 @@ resource "aws_codebuild_project" "app" {
     image                       = "aws/codebuild/standard:5.0"
     privileged_mode             = true
     image_pull_credentials_type = "CODEBUILD"
-    
+
     environment_variable {
       name  = "AWS_ACCOUNT_ID"
       value = data.aws_caller_identity.current.account_id
@@ -205,7 +205,7 @@ resource "aws_codebuild_project" "app" {
       name  = "IMAGE_TAG"
       value = "latest"
     }
-     environment_variable {
+    environment_variable {
       name  = "CONTAINER_NAME"
       value = "${var.project_name}-container"
     }
@@ -240,9 +240,9 @@ resource "aws_codepipeline" "app" {
       output_artifacts = ["source_output"]
 
       configuration = {
-        Owner  = var.github_owner
-        Repo   = var.github_repo
-        Branch = var.github_branch
+        Owner      = var.github_owner
+        Repo       = var.github_repo
+        Branch     = var.github_branch
         OAuthToken = var.github_token
       }
     }

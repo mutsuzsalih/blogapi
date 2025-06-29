@@ -34,8 +34,8 @@ resource "aws_db_instance" "main" {
 
   # Adding storage_type and max_allocated_storage for best practice with free tier
   # Though not strictly required, it's good to be explicit.
-  storage_type           = "gp2"
-  max_allocated_storage  = 20 # Allows for some growth within free tier limits (20 GiB max for gp2)
+  storage_type          = "gp2"
+  max_allocated_storage = 20 # Allows for some growth within free tier limits (20 GiB max for gp2)
 }
 
 resource "aws_security_group" "db_sg" {
@@ -74,7 +74,7 @@ resource "aws_ecs_cluster" "main" {
 
 # IAM role for ECS EC2 instances
 resource "aws_iam_role" "ecs_instance_role" {
-  name               = "${var.project_name}-ecs-instance-role"
+  name = "${var.project_name}-ecs-instance-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -92,12 +92,12 @@ resource "aws_iam_role_policy_attachment" "ecs_instance_role_policy" {
 
 # IAM Role for ECS Task Execution
 resource "aws_iam_role" "ecs_task_execution_role" {
-  name               = "${var.project_name}-ecs-task-execution-role"
+  name = "${var.project_name}-ecs-task-execution-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Action    = "sts:AssumeRole",
-      Effect    = "Allow",
+      Action = "sts:AssumeRole",
+      Effect = "Allow",
       Principal = {
         Service = "ecs-tasks.amazonaws.com"
       }
@@ -116,31 +116,10 @@ resource "aws_iam_instance_profile" "ecs_instance_profile" {
   role = aws_iam_role.ecs_instance_role.name
 }
 
-# Security group for the Application Load Balancer
-resource "aws_security_group" "lb_sg" {
-  name        = "${var.project_name}-lb-sg"
-  description = "Allow HTTP inbound traffic for ALB"
-  vpc_id      = data.aws_vpc.default.id
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Allow HTTP from anywhere
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"] # Allow all outbound from ALB
-  }
-}
-
 # Security group for ECS EC2
 resource "aws_security_group" "ecs_sg" {
   name        = "${var.project_name}-ecs-sg"
-  description = "Allow HTTP/8080 from ALB and SSH from anywhere"
+  description = "Allow SSH (22) and application traffic (8080) from anywhere"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
@@ -150,16 +129,21 @@ resource "aws_security_group" "ecs_sg" {
     cidr_blocks = ["0.0.0.0/0"] # Allow SSH from anywhere (consider restricting this for production)
   }
   ingress {
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [aws_security_group.lb_sg.id] # Only allow traffic from ALB
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] # Allow HTTP traffic from anywhere
   }
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"] # Allow all outbound from ECS instances (for pulling images, communicating with DB, etc.)
+  }
+
+  lifecycle {
+    prevent_destroy = true # avoid accidental deletion while instance attached
+    ignore_changes  = [description] # description immutable; skip to avoid replace
   }
 }
 
@@ -190,11 +174,11 @@ resource "aws_launch_template" "ecs" {
 
 # Auto Scaling Group (single t2.micro, free tier)
 resource "aws_autoscaling_group" "ecs" {
-  name                 = "${var.project_name}-ecs-asg"
-  max_size             = 1
-  min_size             = 1
-  desired_capacity     = 1
-  vpc_zone_identifier  = data.aws_subnets.default.ids
+  name                = "${var.project_name}-ecs-asg"
+  max_size            = 1
+  min_size            = 1
+  desired_capacity    = 1
+  vpc_zone_identifier = data.aws_subnets.default.ids
   launch_template {
     id      = aws_launch_template.ecs.id
     version = "$Latest"
@@ -212,14 +196,14 @@ resource "aws_ecs_task_definition" "app" {
   network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
   cpu                      = "256" # Keep CPU low for t2.micro
-  memory                   = "450" # REDUCED MEMORY: To ensure it fits on a t2.micro with OS/agent overhead.
+  memory                   = "256" # LOWER MEMORY further; allows two tasks (2x256=512 MiB) on t2.micro during overlap.
 
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   container_definitions = jsonencode([
     {
-      name        = "${var.project_name}-container"
-      image       = "${aws_ecr_repository.app.repository_url}:latest"
-      essential   = true
+      name         = "${var.project_name}-container"
+      image        = "${aws_ecr_repository.app.repository_url}:latest"
+      essential    = true
       portMappings = [{ containerPort = 8080, hostPort = 8080 }]
       environment = [
         {
@@ -241,7 +225,7 @@ resource "aws_ecs_task_definition" "app" {
         # Ensure this value is <= your 'memory' setting in the task definition
         {
           name  = "JAVA_OPTS"
-          value = "-Xmx320m -Xms320m"
+          value = "-Xmx192m -Xms192m" # align JVM heap with lower task memory
         }
       ]
       logConfiguration = {
@@ -264,18 +248,15 @@ resource "aws_cloudwatch_log_group" "app" {
 
 # ECS Service (single task)
 resource "aws_ecs_service" "app" {
-  name                           = "${var.project_name}-service"
-  cluster                        = aws_ecs_cluster.main.id
-  task_definition                = aws_ecs_task_definition.app.arn
-  desired_count                  = 1
-  launch_type                    = "EC2"
+  name                               = "${var.project_name}-service"
+  cluster                            = aws_ecs_cluster.main.id
+  task_definition                    = aws_ecs_task_definition.app.arn
+  desired_count                      = 1
+  launch_type                        = "EC2"
   deployment_minimum_healthy_percent = 0 # Good for single instance to allow new task to spin up even if old one is not healthy
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.app.arn
-    container_name   = "${var.project_name}-container"
-    container_port   = 8080
-  }
+  deployment_maximum_percent         = 100
+  # Allow some warm-up time before the ALB starts health-checking the new task
+  health_check_grace_period_seconds = 60
 
   # Add deployment_controller for explicit ECS (not CodeDeploy)
   deployment_controller {
@@ -284,46 +265,4 @@ resource "aws_ecs_service" "app" {
 
   # Ensure service waits for ASG to be ready
   depends_on = [aws_autoscaling_group.ecs]
-}
-
-# Application Load Balancer
-resource "aws_lb" "app" {
-  name               = "${var.project_name}-lb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.lb_sg.id]
-  subnets            = data.aws_subnets.default.ids
-  enable_deletion_protection = false # Set to true in production
-}
-
-# ALB Target Group
-resource "aws_lb_target_group" "app" {
-  name_prefix = "bapi-"
-  port        = 8080
-  protocol    = "HTTP"
-  vpc_id      = data.aws_vpc.default.id
-  health_check {
-    path                = "/actuator/health"
-    protocol            = "HTTP"
-    matcher             = "200"
-    interval            = 20 # INCREASED INTERVAL: Give app more time to respond (was 15)
-    timeout             = 10 # INCREASED TIMEOUT: Give app more time to respond (was 5)
-    healthy_threshold   = 2
-    unhealthy_threshold = 2
-  }
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# ALB Listener
-resource "aws_lb_listener" "app" {
-  load_balancer_arn = aws_lb.app.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app.arn
-  }
 } 
