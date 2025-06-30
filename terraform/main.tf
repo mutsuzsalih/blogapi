@@ -35,7 +35,7 @@ resource "aws_db_instance" "main" {
   # Adding storage_type and max_allocated_storage for best practice with free tier
   # Though not strictly required, it's good to be explicit.
   storage_type          = "gp2"
-  max_allocated_storage = 20 # Allows for some growth within free tier limits (20 GiB max for gp2)
+  max_allocated_storage = 20
 }
 
 resource "aws_security_group" "db_sg" {
@@ -47,20 +47,19 @@ resource "aws_security_group" "db_sg" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.ecs_sg.id] # Only allow traffic from ECS instances
+    security_groups = [aws_security_group.ecs_sg.id]
   }
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"] # Allow all outbound traffic from DB (e.g., for updates)
+    cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
 # ECR repository to store the Docker image
 resource "aws_ecr_repository" "app" {
-  name = "${var.project_name}-repo"
-  # Add lifecycle rule to prevent accidental deletion of images
+  name                 = "${var.project_name}-repo"
   image_tag_mutability = "MUTABLE"
   image_scanning_configuration {
     scan_on_push = true
@@ -126,24 +125,24 @@ resource "aws_security_group" "ecs_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Allow SSH from anywhere (consider restricting this for production)
+    cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Allow HTTP traffic from anywhere
+    cidr_blocks = ["0.0.0.0/0"]
   }
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"] # Allow all outbound from ECS instances (for pulling images, communicating with DB, etc.)
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   lifecycle {
-    prevent_destroy = true # avoid accidental deletion while instance attached
-    ignore_changes  = [description] # description immutable; skip to avoid replace
+    prevent_destroy = true
+    ignore_changes  = [description]
   }
 }
 
@@ -160,16 +159,16 @@ data "aws_ami" "ecs" {
 resource "aws_launch_template" "ecs" {
   name_prefix   = "${var.project_name}-ecs-lt-"
   image_id      = data.aws_ami.ecs.id
-  instance_type = "t2.micro" # t2.micro is part of the free tier
+  instance_type = "t2.micro"
   key_name      = var.ec2_key_name
   network_interfaces {
-    associate_public_ip_address = false # Keep EC2 instances private if possible, ALB handles public access
+    associate_public_ip_address = true
     security_groups             = [aws_security_group.ecs_sg.id]
   }
   iam_instance_profile {
     name = aws_iam_instance_profile.ecs_instance_profile.name
   }
-  user_data = base64encode("#!/bin/bash\necho ECS_CLUSTER=${var.project_name}-cluster >> /etc/ecs/ecs.config\n")
+  user_data = base64encode("#!/bin/bash\necho ECS_CLUSTER=${aws_ecs_cluster.main.name} >> /etc/ecs/ecs.config")
 }
 
 # Auto Scaling Group (single t2.micro, free tier)
@@ -195,16 +194,19 @@ resource "aws_ecs_task_definition" "app" {
   family                   = "${var.project_name}-task"
   network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
-  cpu                      = "256" # Keep CPU low for t2.micro
-  memory                   = "256" # LOWER MEMORY further; allows two tasks (2x256=512 MiB) on t2.micro during overlap.
+  cpu                      = "256"
+  memory                   = "256"
 
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   container_definitions = jsonencode([
     {
-      name         = "${var.project_name}-container"
-      image        = "${aws_ecr_repository.app.repository_url}:latest"
-      essential    = true
-      portMappings = [{ containerPort = 8080, hostPort = 8080 }]
+      name      = "${var.project_name}-container"
+      image     = "${aws_ecr_repository.app.repository_url}:latest"
+      essential = true
+      portMappings = [{
+        containerPort = 8080,
+        hostPort      = 8080
+      }]
       environment = [
         {
           name  = "SPRING_DATASOURCE_URL"
@@ -222,10 +224,9 @@ resource "aws_ecs_task_definition" "app" {
           name  = "JWT_SECRET"
           value = var.jwt_secret
         },
-        # Ensure this value is <= your 'memory' setting in the task definition
         {
           name  = "JAVA_OPTS"
-          value = "-Xmx192m -Xms192m" # align JVM heap with lower task memory
+          value = "-Xmx192m -Xms192m"
         }
       ]
       logConfiguration = {
@@ -241,28 +242,19 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_cloudwatch_log_group" "app" {
-  name = "/ecs/${var.project_name}"
-  # Optionally add retention period to manage log costs
-  retention_in_days = 7 # Keep logs for 7 days. Adjust as needed.
+  name              = "/ecs/${var.project_name}"
+  retention_in_days = 7
 }
 
 # ECS Service (single task)
 resource "aws_ecs_service" "app" {
-  name                               = "${var.project_name}-service"
-  cluster                            = aws_ecs_cluster.main.id
-  task_definition                    = aws_ecs_task_definition.app.arn
-  desired_count                      = 1
-  launch_type                        = "EC2"
-  deployment_minimum_healthy_percent = 0 # Good for single instance to allow new task to spin up even if old one is not healthy
-  deployment_maximum_percent         = 100
-  # Allow some warm-up time before the ALB starts health-checking the new task
-  health_check_grace_period_seconds = 60
+  name            = "${var.project_name}-service"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.app.arn
+  desired_count   = 1
+  launch_type     = "EC2"
 
-  # Add deployment_controller for explicit ECS (not CodeDeploy)
-  deployment_controller {
-    type = "ECS"
-  }
-
-  # Ensure service waits for ASG to be ready
-  depends_on = [aws_autoscaling_group.ecs]
-} 
+  # Ensure tasks are replaced on new deployments
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 50
+}
