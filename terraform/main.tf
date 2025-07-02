@@ -19,6 +19,73 @@ data "aws_subnets" "default" {
   }
 }
 
+# --- RANDOM PASSWORDS AND SECRETS ---
+# SSH Key Pair generation
+resource "tls_private_key" "ec2_key" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_key_pair" "ec2_key" {
+  key_name   = "${var.project_name}-ec2-key"
+  public_key = tls_private_key.ec2_key.public_key_openssh
+}
+
+resource "random_password" "github_token" {
+  length           = 40
+  special          = true
+  override_special = "_"
+}
+
+resource "random_password" "db_password" {
+  length           = 16
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "random_password" "jwt_secret" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+# --- SECRETS MANAGER ---
+resource "aws_secretsmanager_secret" "ssh_private_key" {
+  name = "${var.project_name}-ssh-private-key-v1"
+}
+
+resource "aws_secretsmanager_secret_version" "ssh_private_key" {
+  secret_id     = aws_secretsmanager_secret.ssh_private_key.id
+  secret_string = tls_private_key.ec2_key.private_key_pem
+}
+
+resource "aws_secretsmanager_secret" "github_token" {
+  name = "${var.project_name}-github-token-v1"
+}
+
+resource "aws_secretsmanager_secret_version" "github_token" {
+  secret_id     = aws_secretsmanager_secret.github_token.id
+  secret_string = random_password.github_token.result
+}
+
+resource "aws_secretsmanager_secret" "db_password" {
+  name = "${var.project_name}-db-password-v2"
+}
+
+resource "aws_secretsmanager_secret_version" "db_password" {
+  secret_id     = aws_secretsmanager_secret.db_password.id
+  secret_string = random_password.db_password.result
+}
+
+resource "aws_secretsmanager_secret" "jwt_secret" {
+  name = "${var.project_name}-jwt-secret-v2"
+}
+
+resource "aws_secretsmanager_secret_version" "jwt_secret" {
+  secret_id     = aws_secretsmanager_secret.jwt_secret.id
+  secret_string = random_password.jwt_secret.result
+}
+
 # RDS (Free Tier)
 resource "aws_db_instance" "main" {
   allocated_storage      = 10
@@ -27,7 +94,7 @@ resource "aws_db_instance" "main" {
   instance_class         = "db.t3.micro" # db.t3.micro is part of the free tier for RDS
   db_name                = var.db_name
   username               = var.db_user
-  password               = var.db_password
+  password               = random_password.db_password.result
   skip_final_snapshot    = true
   vpc_security_group_ids = [aws_security_group.db_sg.id]
   publicly_accessible    = false # Keep database private for security
@@ -36,6 +103,11 @@ resource "aws_db_instance" "main" {
   # Though not strictly required, it's good to be explicit.
   storage_type          = "gp2"
   max_allocated_storage = 20
+
+  # Prevent accidental deletion of the database
+  lifecycle {
+    prevent_destroy = true
+  }
 }
 
 resource "aws_security_group" "db_sg" {
@@ -109,6 +181,44 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# IAM role for ECS Task (Secrets Manager access için)
+resource "aws_iam_role" "ecs_task_role" {
+  name = "${var.project_name}-ecs-task-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = { Service = "ecs-tasks.amazonaws.com" },
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_policy" "secrets_access" {
+  name = "${var.project_name}-secrets-access"
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Action = [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:DescribeSecret"
+      ],
+      Resource = [
+        aws_secretsmanager_secret.db_password.arn,
+        aws_secretsmanager_secret.jwt_secret.arn,
+        aws_secretsmanager_secret.github_token.arn,
+        aws_secretsmanager_secret.ssh_private_key.arn
+      ]
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_secrets_policy" {
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.secrets_access.arn
+}
+
 # IAM instance profile for ECS EC2
 resource "aws_iam_instance_profile" "ecs_instance_profile" {
   name = "${var.project_name}-ecs-instance-profile"
@@ -160,7 +270,7 @@ resource "aws_launch_template" "ecs" {
   name_prefix   = "${var.project_name}-ecs-lt-"
   image_id      = data.aws_ami.ecs.id
   instance_type = "t2.micro"
-  key_name      = var.ec2_key_name
+  key_name      = aws_key_pair.ec2_key.key_name
   network_interfaces {
     associate_public_ip_address = true
     security_groups             = [aws_security_group.ecs_sg.id]
@@ -198,6 +308,7 @@ resource "aws_ecs_task_definition" "app" {
   memory                   = "256"
 
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn      = aws_iam_role.ecs_task_role.arn
   container_definitions = jsonencode([
     {
       name      = "${var.project_name}-container"
@@ -217,16 +328,18 @@ resource "aws_ecs_task_definition" "app" {
           value = var.db_user
         },
         {
-          name  = "SPRING_DATASOURCE_PASSWORD"
-          value = var.db_password
-        },
-        {
-          name  = "JWT_SECRET"
-          value = var.jwt_secret
-        },
-        {
           name  = "JAVA_OPTS"
           value = "-Xmx192m -Xms192m"
+        }
+      ]
+      secrets = [
+        {
+          name      = "SPRING_DATASOURCE_PASSWORD"
+          valueFrom = aws_secretsmanager_secret.db_password.arn
+        },
+        {
+          name      = "JWT_SECRET"
+          valueFrom = aws_secretsmanager_secret.jwt_secret.arn
         }
       ]
       logConfiguration = {

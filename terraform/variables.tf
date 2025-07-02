@@ -21,19 +21,3 @@ variable "db_user" {
   type        = string
 }
 
-variable "db_password" {
-  description = "Password for the RDS database"
-  type        = string
-  sensitive   = true
-}
-
-variable "ec2_key_name" {
-  description = "Name of the EC2 key pair to use for the ECS instances"
-  type        = string
-}
-
-variable "jwt_secret" {
-  description = "Secret key for JWT generation and validation"
-  type        = string
-  sensitive   = true
-} 

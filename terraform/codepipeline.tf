@@ -17,11 +17,7 @@ variable "github_branch" {
   default     = "main"
 }
 
-variable "github_token" {
-  description = "GitHub personal access token for CodePipeline"
-  type        = string
-  sensitive   = true
-}
+
 
 # S3 bucket for CodePipeline artifacts
 resource "aws_s3_bucket" "codepipeline_artifacts" {
@@ -243,7 +239,7 @@ resource "aws_codepipeline" "app" {
         Owner      = var.github_owner
         Repo       = var.github_repo
         Branch     = var.github_branch
-        OAuthToken = var.github_token
+        OAuthToken = random_password.github_token.result
       }
     }
   }
