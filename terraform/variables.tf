@@ -3,7 +3,7 @@ variable "project_name" {
   type        = string
   default     = "blogapi"
 }
- 
+
 variable "aws_region" {
   description = "The AWS region to deploy resources"
   type        = string
@@ -17,12 +17,7 @@ variable "db_name" {
 }
 
 variable "db_user" {
-  description = "The username for the database"
+  description = "Username for the RDS database"
   type        = string
-  default     = "postgres"
 }
 
-variable "ec2_key_name" {
-  description = "EC2 instance için kullanılacak SSH key pair adı"
-  type        = string
-} 

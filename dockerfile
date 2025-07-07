@@ -1,13 +1,25 @@
-#Build 
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+FROM public.ecr.aws/docker/library/maven:3.9.6-eclipse-temurin-21 AS build
+
 WORKDIR /app
+
 COPY pom.xml .
+
+
 RUN mvn dependency:go-offline
+
+
 COPY . .
+
+
 RUN mvn clean package -DskipTests
 
-#Run
+
 FROM openjdk:21-jdk-slim
+
+
 WORKDIR /app
+
+
 COPY --from=build /app/target/*.jar app.jar
-ENTRYPOINT ["java","-jar","app.jar"]
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]

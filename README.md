@@ -1,7 +1,7 @@
 # Blog API
 
 A blog API developed with Spring Boot and PostgreSQL. This API includes user management, blog posts, tagging system, validation, logging, and role-based security.
-
+.
 ## 🚀 Features
 
 - User registration and authentication

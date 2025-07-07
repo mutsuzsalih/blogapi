@@ -25,9 +25,9 @@ resource "aws_s3_bucket_public_access_block" "frontend_bucket_public_access" {
 }
 
 
-# CloudFront Origin Access Identity to allow CloudFront to securely access the S3 bucket
+# CloudFront Origin Access Identity (OAI)
 resource "aws_cloudfront_origin_access_identity" "oai" {
-  comment = "OAI for my-react-app"
+  comment = "OAI for ${aws_s3_bucket.frontend_bucket.id}"
 }
 
 # S3 bucket policy to grant CloudFront OAI read access to the bucket objects
