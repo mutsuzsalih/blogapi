@@ -2,6 +2,10 @@ package com.blog.blogapi.controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -11,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.blog.blogapi.dto.PostRequest;
@@ -21,6 +26,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -37,13 +43,12 @@ public class PostController {
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
-    public ResponseEntity<PostResponse> createPost(@RequestBody PostRequest request) {
+    public ResponseEntity<PostResponse> createPost(@Valid @RequestBody PostRequest request) {
         PostResponse response = postService.createPost(request);
         return ResponseEntity.ok(response);
     }
 
     @Operation(summary = "Get post by ID", description = "Retrieves post details by its ID")
-    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/{id}")
     public ResponseEntity<PostResponse> getPostById(
             @Parameter(description = "Post ID", required = true) @PathVariable Long id) {
@@ -51,12 +56,21 @@ public class PostController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Get all posts", description = "Retrieves a list of all posts")
-    @SecurityRequirement(name = "bearerAuth")
-    @PreAuthorize("isAuthenticated()")
+    @Operation(summary = "Get all posts", description = "Retrieves a paginated list of all posts")
     @GetMapping
-    public ResponseEntity<List<PostResponse>> getAllPosts() {
-        List<PostResponse> responses = postService.getAllPosts();
+    public ResponseEntity<Page<PostResponse>> getAllPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Page<PostResponse> responses;
+
+        if (search != null && !search.trim().isEmpty()) {
+            responses = postService.searchPosts(search, pageable);
+        } else {
+            responses = postService.getAllPosts(pageable);
+        }
+
         return ResponseEntity.ok(responses);
     }
 
@@ -79,5 +93,13 @@ public class PostController {
             @Parameter(description = "Post ID", required = true) @PathVariable Long id) {
         postService.deletePost(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Get posts by user", description = "Retrieves all posts by a specific user")
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<PostResponse>> getPostsByUser(
+            @Parameter(description = "User ID", required = true) @PathVariable Long userId) {
+        List<PostResponse> responses = postService.getPostsByUser(userId);
+        return ResponseEntity.ok(responses);
     }
 }

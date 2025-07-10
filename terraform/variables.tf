@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "The name of the project"
   type        = string
-  default     = "blogapi"
+  default     = "thoughtspace"
 }
 
 variable "aws_region" {
@@ -13,7 +13,7 @@ variable "aws_region" {
 variable "db_name" {
   description = "The name of the database"
   type        = string
-  default     = "blogapidb"
+  default     = "thoughtspacedb"
 }
 
 variable "db_user" {

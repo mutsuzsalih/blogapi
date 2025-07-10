@@ -19,9 +19,9 @@ public class OpenApiConfig {
                 final String securitySchemeName = "bearerAuth";
                 return new OpenAPI()
                                 .info(new Info()
-                                                .title("Blog API")
+                                                .title("ThoughtSpace API")
                                                 .version("1.0")
-                                                .description("Spring Boot ve PostgreSQL ile geliştirilmiş blog API'si")
+                                                .description("Modern düşünce ve içerik paylaşım platformu için Spring Boot ve PostgreSQL ile geliştirilmiş API")
                                                 .contact(new Contact()
                                                                 .name("Salih SANSARCI")
                                                                 .email("salihsansarci@gmail.com")

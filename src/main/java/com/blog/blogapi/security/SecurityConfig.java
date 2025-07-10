@@ -6,6 +6,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import static org.springframework.security.config.Customizer.withDefaults;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -52,19 +53,18 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_PATHS)
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/posts/public/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/tags/public/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, API_POSTS_PATH).permitAll()
+                        .requestMatchers(HttpMethod.GET, API_TAGS_PATH).permitAll()
                         .requestMatchers(HttpMethod.POST, API_TAGS_PATH).hasRole(ADMIN)
                         .requestMatchers(HttpMethod.PUT, API_TAGS_PATH).hasRole(ADMIN)
                         .requestMatchers(HttpMethod.DELETE, API_TAGS_PATH).hasRole(ADMIN)
                         .requestMatchers(HttpMethod.POST, API_POSTS_PATH).hasAnyRole(ADMIN, USER)
                         .requestMatchers(HttpMethod.PUT, API_POSTS_PATH).hasAnyRole(ADMIN, USER)
                         .requestMatchers(HttpMethod.DELETE, API_POSTS_PATH).hasAnyRole(ADMIN, USER)
-                        .requestMatchers(HttpMethod.GET, API_POSTS_PATH).authenticated()
-                        .requestMatchers(HttpMethod.GET, API_TAGS_PATH).authenticated()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))

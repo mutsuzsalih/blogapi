@@ -52,7 +52,7 @@ class PostServiceTest {
     private Tag tag;
 
     @BeforeEach
-    void setUp() {
+    void initializeTestData() {
         user = new User();
         user.setId(1L);
         user.setUsername("testuser");
@@ -71,13 +71,16 @@ class PostServiceTest {
     }
 
     @Test
-    @DisplayName("getAllPosts should return all posts")
-    void getAllPosts_shouldReturnAllPosts() {
-        when(postRepository.findAll()).thenReturn(List.of(post));
-        List<PostResponse> responses = postService.getAllPosts();
+    @DisplayName("getPostsByUser should return user posts")
+    void getPostsByUser_shouldReturnUserPosts() {
+        when(postRepository.findByAuthor_Id(1L)).thenReturn(List.of(post));
+
+        List<PostResponse> responses = postService.getPostsByUser(1L);
+
         assertEquals(1, responses.size());
         assertEquals("Test Title", responses.get(0).getTitle());
-        verify(postRepository).findAll();
+        assertEquals("testuser", responses.get(0).getAuthorUsername());
+        verify(postRepository).findByAuthor_Id(1L);
     }
 
     @Test
@@ -94,7 +97,9 @@ class PostServiceTest {
     @DisplayName("getPostById should throw exception when not found")
     void getPostById_whenNotFound_shouldThrowException() {
         when(postRepository.findById(anyLong())).thenReturn(Optional.empty());
-        var exception = assertThrows(ResourceNotFoundException.class, () -> postService.getPostById(1L));
+
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> postService.getPostById(1L));
         assertEquals("Post not found with id : '1'", exception.getMessage());
         verify(postRepository).findById(1L);
     }
@@ -156,7 +161,9 @@ class PostServiceTest {
                 .when(authorizationService).checkPostOwnerOrAdmin(postId);
 
         // Then
-        assertThrows(ResourceNotFoundException.class, () -> postService.updatePost(postId, request));
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> postService.updatePost(postId, request));
+        assertNotNull(exception);
         verify(authorizationService).checkPostOwnerOrAdmin(postId);
         verify(postRepository, never()).findById(anyLong());
     }
@@ -186,7 +193,9 @@ class PostServiceTest {
                 .when(authorizationService).checkPostOwnerOrAdmin(postId);
 
         // Then
-        assertThrows(ResourceNotFoundException.class, () -> postService.deletePost(postId));
+        ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class,
+                () -> postService.deletePost(postId));
+        assertNotNull(exception);
         verify(authorizationService).checkPostOwnerOrAdmin(postId);
         verify(postRepository, never()).deleteById(anyLong());
     }

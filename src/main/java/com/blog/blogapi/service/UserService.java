@@ -31,15 +31,20 @@ public class UserService {
 
     public UserResponse registerUser(UserRegistrationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new DuplicateResourceException("User", "username", request.getUsername());
+            throw new DuplicateResourceException("User with username '" + request.getUsername() + "' already exists.");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateResourceException("User", "email", request.getEmail());
+            throw new DuplicateResourceException("User with email '" + request.getEmail() + "' already exists.");
         }
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        long userCount = userRepository.count();
+        if (userCount == 0) {
+            user.setRole(com.blog.blogapi.model.Role.ADMIN);
+        }
 
         User saved = userRepository.save(user);
         return toUserResponse(saved);

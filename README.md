@@ -1,46 +1,69 @@
-# Blog API
+# ThoughtSpace
 
-A blog API developed with Spring Boot and PostgreSQL. This API includes user management, blog posts, tagging system, validation, logging, and role-based security.
-.
+A modern full-stack platform for sharing thoughts, ideas and stories. Built with Spring Boot backend and React frontend, featuring a beautiful user-friendly interface with advanced content management and admin capabilities.
+
 ## 🚀 Features
 
+### Backend Features
 - User registration and authentication
 - Create, edit, and delete blog posts
-- Tagging system
+- Tagging system with full CRUD operations
 - Role-based authorization (USER/ADMIN)
 - JWT-based security
-- Validation on all entities (User, Post, Tag)
-- Spring Boot Actuator (health, metrics, etc.)
-- Method-level security (@PreAuthorize)
-- Centralized logging (console + logs/app.log)
-- Unit & validation tests for all entities
+- Search functionality
+- Validation on all entities
+- Spring Boot Actuator
+- Method-level security
+- Centralized logging
+- Unit & validation tests
 - Swagger/OpenAPI documentation
-- Docker support (with log volume)
+- Docker support
+
+### Frontend Features
+- Modern React application with responsive design
+- Dark/Light mode toggle
+- User authentication (login/register)
+- Blog post creation and editing with rich text editor
+- Advanced search functionality
+- User profile management
+- Admin panel for managing posts, tags, and users
+- Real-time notifications
+- Mobile-friendly interface
+- Professional UI/UX design
 
 ## 🛠️ Technologies
 
+### Backend
 - Java 21
 - Spring Boot 3.x
 - PostgreSQL
 - Maven
-- JWT
+- JWT Authentication
 - Docker
-- AWS (ECS, RDS, S3)
-- Terraform
 - Swagger/OpenAPI
 - JUnit 5
+
+### Frontend
+- React 18
+- Tailwind CSS
+- React Router
+- Axios
+- React Quill (Rich Text Editor)
+- Lucide React (Icons)
+- React Toastify (Notifications)
+- Dark Mode Support
 
 ## 📋 Prerequisites
 
 - Java 21 or higher
+- Node.js 16+ and npm
 - Maven
 - PostgreSQL
 - Docker (optional)
-- AWS CLI & Terraform (for cloud deployment)
 
 ## 🚀 Getting Started
 
-### Local Development Environment
+### Backend Setup
 
 1. Clone the project:
 ```bash
@@ -55,141 +78,121 @@ spring.datasource.username=postgres
 spring.datasource.password=2150
 ```
 
-3. Build and run the project:
+3. Build and run the backend:
 ```bash
 ./mvnw clean install
 ./mvnw spring-boot:run
 ```
+
+Backend will be available at: http://localhost:8080
+
+### Frontend Setup
+
+1. Navigate to frontend directory:
+```bash
+cd frontend
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Create `.env` file in frontend directory:
+```env
+REACT_APP_API_URL=http://localhost:8080/api
+```
+
+4. Start the development server:
+```bash
+npm start
+```
+
+Frontend will be available at: http://localhost:3000
 
 ### Running with Docker
 
 ```bash
 docker-compose up --build
 ```
-- Log files are stored on the host as `logs/app.log` when using Docker.
 
-### Deploying to AWS (Terraform)
+## 📖 Frontend Features
 
-This project is configured for automated deployment to AWS.
+### User Interface
+- **Home Page**: Browse all blog posts with search functionality
+- **Authentication**: Login and register pages with form validation
+- **Post Creation**: Rich text editor for creating blog posts
+- **Post Management**: Edit and delete your own posts
+- **Profile Page**: View and manage your blog posts
+- **Admin Panel**: Comprehensive admin dashboard for managing content
+- **Dark Mode**: Toggle between light and dark themes
 
-1. Setup Infrastructure (First Time Only):
-This command provisions all the necessary AWS resources (VPC, Database, Cluster, etc.). It can take 5-10 minutes.
-```bash
-cd terraform
-terraform init
-terraform apply
-```
+### Admin Panel Features
+- **Posts Management**: View, edit, delete all blog posts
+- **Tag Management**: Create, edit, delete tags
+- **User Management**: View all registered users
+- **Statistics**: Overview of total posts, tags, and users
 
-2. Deploy or Update the Application:
-After making code changes, run the `deploy.ps1` script from the project root to deploy the new version.
-```bash
-# From project root
-./deploy.ps1
-```
+## 📖 API Documentation
 
-3. Destroy Infrastructure:
-To remove all created AWS resources and avoid costs, run the destroy command from the `terraform` directory.
-```bash
-cd terraform
-terraform destroy
-```
-
-## 📖 API Usage
-
-### User Operations
-
-#### Register
-```http
-POST /api/users/register
-Content-Type: application/json
-
-{
-    "username": "salih123",
-    "email": "salihsansarci@example.com",
-    "password": "password123"
-}
-```
-
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-    "username": "salih123",
-    "password": "password123"
-}
-```
-
-### Blog Post Operations
-
-#### Create New Post
-```http
-POST /api/posts
-Authorization: Bearer {jwt_token}
-Content-Type: application/json
-
-{
-    "title": "My First Blog Post",
-    "content": "This is my first blog post...",
-    "tagIds": [1, 2]
-}
-```
-
-#### List Posts (ADMIN only)
-```http
-GET /api/posts
-Authorization: Bearer {jwt_token}
-```
-
-## 🔍 API Documentation
-
-Access the API documentation through Swagger UI:   http://localhost:8080/swagger-ui.html
+Access the API documentation through Swagger UI: http://localhost:8080/swagger-ui.html
 
 ## 🧪 Testing
 
-To run all unit and validation tests:
+### Backend Tests
 ```bash
 ./mvnw test
 ```
-- Validation tests: All entity validation rules are covered in `src/test/java/com/blog/blogapi/model/*ValidationTest.java` files.
-- Test rules: Setup, initialization, assertion, and independent tests are applied.
+
+### Frontend Tests
+```bash
+cd frontend
+npm test
+```
 
 ## 📦 Project Structure
 
-src
-├── main
-│ ├── java
-│ │ └── com
-│ │ └── blogapi
-│ │ ├── aspect
-│ │ ├── config
-│ │ ├── controller
-│ │ ├── dto
-│ │ ├── exception
-│ │ ├── model
-│ │ ├── repository
-│ │ ├── security
-│ │ └── service
-│ └── resources
-│ └── application.properties
-└── test
-└── java
-└── com
-└── blogapi
-└── model
-└── service
+```
+blogapi/
+├── src/                          # Backend source code
+│   ├── main/java/com/blog/blogapi/
+│   │   ├── controller/
+│   │   ├── service/
+│   │   ├── model/
+│   │   ├── repository/
+│   │   ├── security/
+│   │   └── dto/
+│   └── test/
+├── frontend/                     # Frontend React app
+│   ├── src/
+│   │   ├── components/
+│   │   ├── contexts/
+│   │   ├── services/
+│   │   └── App.js
+│   ├── public/
+│   └── package.json
+├── terraform/                    # AWS deployment
+├── docker-compose.yml
+└── pom.xml
+```
 
 ## 🔐 Security
 
-- JWT-based authentication
-- Role-based authorization
-- Method-level security with `@PreAuthorize`
-- Password encryption and secure data storage
+- JWT-based authentication with automatic token management
+- Role-based authorization (User/Admin)
+- Password encryption
+- Protected routes on frontend
+- CORS configuration for secure frontend-backend communication
 
-## 📊 Monitoring & Logging
-- Spring Boot Actuator: Endpoints like `/actuator/health`, `/actuator/metrics` are enabled.
-- Log files: All logs are written to both console and `logs/app.log` file (visible on host when using Docker).
+## 🎨 Design Features
+
+- Modern, clean interface design
+- Responsive layout for all device sizes
+- Dark/Light mode with smooth transitions
+- Professional color scheme
+- Intuitive navigation and user experience
+- Loading states and error handling
+- Toast notifications for user feedback
 
 ## 📞 Contact
 
