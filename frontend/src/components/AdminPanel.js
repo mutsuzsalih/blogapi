@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { postsAPI, tagsAPI, usersAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -24,6 +25,7 @@ import {
 import { toast } from 'react-toastify';
 
 const AdminPanel = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState('posts');
   const [posts, setPosts] = useState([]);
   const [tags, setTags] = useState([]);
@@ -49,7 +51,7 @@ const AdminPanel = () => {
       setTotalElements(response.data.totalElements || 0);
     } catch (error) {
       console.error('Error fetching posts:', error);
-      toast.error('Blog yazıları yüklenirken hata oluştu');
+      toast.error(t('messages.error.postsLoadError'));
       setPosts([]);
     } finally {
       setLoading(false);
@@ -63,7 +65,7 @@ const AdminPanel = () => {
       setTags(response.data || []);
     } catch (error) {
       console.error('Error fetching tags:', error);
-      toast.error('Etiketler yüklenirken hata oluştu');
+      toast.error(t('messages.error.tagsLoadError'));
       setTags([]);
     } finally {
       setLoading(false);
@@ -77,7 +79,7 @@ const AdminPanel = () => {
       setUsers(response.data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Kullanıcılar yüklenirken hata oluştu');
+      toast.error(t('messages.error.usersLoadError'));
       setUsers([]);
     } finally {
       setLoading(false);
@@ -100,19 +102,19 @@ const AdminPanel = () => {
   const handleDeletePost = async (postId) => {
     try {
       await postsAPI.deletePost(postId);
-      toast.success('Blog yazısı başarıyla silindi');
+      toast.success(t('messages.success.postDeleted'));
       setPosts(posts.filter(post => post.id !== postId));
       setTotalElements(prev => prev - 1);
       setDeleteConfirm(null);
     } catch (error) {
       console.error('Error deleting post:', error);
-      toast.error('Blog yazısı silinirken hata oluştu');
+      toast.error(t('messages.error.postDeleteError'));
     }
   };
 
   const handleCreateTag = async () => {
     if (!newTagName.trim()) {
-      toast.error('Etiket adı boş olamaz');
+      toast.error(t('messages.error.tagNameEmpty'));
       return;
     }
 
@@ -121,16 +123,16 @@ const AdminPanel = () => {
       setTags([...tags, response.data]);
       setNewTagName('');
       setShowNewTagForm(false);
-      toast.success('Etiket başarıyla oluşturuldu');
+      toast.success(t('messages.success.tagCreated'));
     } catch (error) {
       console.error('Error creating tag:', error);
-      toast.error('Etiket oluşturulurken hata oluştu');
+      toast.error(t('messages.error.tagCreateError'));
     }
   };
 
   const handleUpdateTag = async (tagId, newName) => {
     if (!newName.trim()) {
-      toast.error('Etiket adı boş olamaz');
+      toast.error(t('messages.error.tagNameEmpty'));
       return;
     }
 
@@ -138,10 +140,10 @@ const AdminPanel = () => {
       const response = await tagsAPI.updateTag(tagId, { name: newName.trim() });
       setTags(tags.map(tag => tag.id === tagId ? response.data : tag));
       setEditingTag(null);
-      toast.success('Etiket başarıyla güncellendi');
+      toast.success(t('messages.success.tagUpdated'));
     } catch (error) {
       console.error('Error updating tag:', error);
-      toast.error('Etiket güncellenirken hata oluştu');
+      toast.error(t('messages.error.tagUpdateError'));
     }
   };
 
@@ -150,10 +152,10 @@ const AdminPanel = () => {
       await tagsAPI.deleteTag(tagId);
       setTags(tags.filter(tag => tag.id !== tagId));
       setDeleteConfirm(null);
-      toast.success('Etiket başarıyla silindi');
+      toast.success(t('messages.success.tagDeleted'));
     } catch (error) {
       console.error('Error deleting tag:', error);
-      toast.error('Etiket silinirken hata oluştu');
+      toast.error(t('messages.error.tagDeleteError'));
     }
   };
 
@@ -223,16 +225,16 @@ const AdminPanel = () => {
         <div className="text-center">
           <AlertTriangle className="h-16 w-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-            Erişim Reddedildi
+            {t('admin.accessDenied')}
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Bu sayfaya erişmek için admin yetkisine sahip olmanız gerekiyor.
+            {t('admin.adminRequired')}
           </p>
           <Link
             to="/"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
           >
-            Ana Sayfaya Dön
+            {t('admin.backToHome')}
           </Link>
         </div>
       </div>
@@ -251,24 +253,21 @@ const AdminPanel = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Shield className="h-8 w-8 text-primary-600 mr-3" />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                Admin Panel
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300">
-                Blog yazılarını, etiketleri ve kullanıcıları yönet
-              </p>
-            </div>
-          </div>
+        <div className="px-6 py-8 border-b border-gray-200 dark:border-gray-700">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            {t('admin.title')}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-300">
+            {t('admin.subtitle')}
+          </p>
+        </div>
+        <div className="px-6 py-4 flex justify-end">
           <Link
             to="/create-post"
             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
           >
             <BookOpen className="h-4 w-4 mr-2" />
-            Yeni Yazı
+            {t('admin.newPost')}
           </Link>
         </div>
       </div>
@@ -286,7 +285,7 @@ const AdminPanel = () => {
               }`}
             >
               <BookOpen className="h-4 w-4 inline mr-2" />
-              Blog Yazıları ({totalElements})
+              {t('admin.postsTab')} ({totalElements})
             </button>
             <button
               onClick={() => setActiveTab('tags')}
@@ -297,7 +296,7 @@ const AdminPanel = () => {
               }`}
             >
               <Tag className="h-4 w-4 inline mr-2" />
-              Etiket Yönetimi ({tags.length})
+              {t('admin.tagsTab')} ({tags.length})
             </button>
             <button
               onClick={() => setActiveTab('users')}
@@ -308,7 +307,7 @@ const AdminPanel = () => {
               }`}
             >
               <Users className="h-4 w-4 inline mr-2" />
-              Kullanıcı Yönetimi ({users.length})
+              {t('admin.usersTab')} ({users.length})
             </button>
           </nav>
         </div>
@@ -323,11 +322,14 @@ const AdminPanel = () => {
 const PostsManagement = ({ 
   posts, totalPages, currentPage, setCurrentPage, deleteConfirm, setDeleteConfirm,
   handleDeletePost, formatDate, truncateContent, pageSize, totalElements 
-}) => (
+}) => {
+  const { t } = useTranslation();
+  
+  return (
   <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
     <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
       <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-        Blog Yazıları Yönetimi
+        {t('admin.postsManagement')}
       </h3>
     </div>
     
@@ -335,17 +337,17 @@ const PostsManagement = ({
       <div className="text-center py-12">
         <BookOpen className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-          Henüz blog yazısı yok
+          {t('admin.postsEmpty')}
         </h3>
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          İlk blog yazısını yazmaya ne dersin?
+          {t('admin.postsEmptySubtitle')}
         </p>
         <Link
           to="/create-post"
           className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
         >
           <BookOpen className="h-5 w-5 mr-2" />
-          İlk Yazını Yaz
+          {t('admin.writeFirstPost')}
         </Link>
       </div>
     ) : (
@@ -355,16 +357,16 @@ const PostsManagement = ({
             <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Yazı
+                  {t('admin.post')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Yazar
+                  {t('admin.author')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Tarih
+                  {t('admin.date')}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  İşlemler
+                  {t('admin.actions')}
                 </th>
               </tr>
             </thead>
@@ -475,20 +477,21 @@ const PostsManagement = ({
               onClick={() => setDeleteConfirm(null)}
               className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
             >
-              İptal
+              {t('common.cancel')}
             </button>
             <button
               onClick={() => handleDeletePost(deleteConfirm.id)}
               className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700"
             >
-              Sil
+              {t('common.delete')}
             </button>
           </div>
         </div>
       </div>
     )}
   </div>
-);
+  )
+};
 
 const TagsManagement = ({ 
   tags, editingTag, setEditingTag, newTagName, setNewTagName, showNewTagForm, setShowNewTagForm,
@@ -770,7 +773,6 @@ const UsersManagement = ({ users, formatDate }) => (
   </div>
 );
 
-// PropTypes
 PostsManagement.propTypes = {
   posts: PropTypes.array.isRequired,
   totalPages: PropTypes.number.isRequired,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { postsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -13,6 +14,7 @@ import {
 import { toast } from 'react-toastify';
 
 const PostDetail = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const [post, setPost] = useState(null);
@@ -36,13 +38,13 @@ const PostDetail = () => {
       let errorMessage;
       
       if (error.response?.status === 404) {
-        errorMessage = 'Blog yazısı bulunamadı';
+        errorMessage = t('messages.error.postNotFound');
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.request) {
-        errorMessage = 'Sunucuya ulaşılamıyor';
+        errorMessage = t('messages.error.serverConnection');
       } else {
-        errorMessage = 'Beklenmeyen bir hata oluştu';
+        errorMessage = t('messages.error.unexpected');
       }
       
       toast.error(errorMessage);
@@ -91,9 +93,9 @@ const PostDetail = () => {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Blog yazısı bulunamadı</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('posts.postNotFound')}</h1>
           <Link to="/" className="text-primary-600 hover:text-primary-700 font-medium">
-            Ana sayfaya dön
+            {t('posts.backToHome')}
           </Link>
         </div>
       </div>
@@ -108,7 +110,7 @@ const PostDetail = () => {
           className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Ana sayfaya dön
+          {t('posts.backToHome')}
         </button>
       </div>
 

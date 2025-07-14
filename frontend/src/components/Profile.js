@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { postsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -14,6 +15,7 @@ import {
 import { toast } from 'react-toastify';
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [userPosts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,9 +35,9 @@ const Profile = () => {
       setUserPosts(response.data || []);
     } catch (error) {
       if (error.response) {
-        toast.error('Yazılarınız yüklenirken hata oluştu');
+        toast.error(t('messages.error.userPostsLoadError'));
       } else if (error.request) {
-        console.warn('Backend\'e ulaşılamıyor, boş liste gösteriliyor');
+        console.warn(t('forms.serverOfflineShort'));
       } else {
         console.error('Error fetching user posts:', error);
       }
@@ -49,11 +51,11 @@ const Profile = () => {
     try {
       setDeleteLoading(postId);
       await postsAPI.deletePost(postId);
-      toast.success('Blog yazısı başarıyla silindi!');
+      toast.success(t('messages.success.postDeleted'));
       setUserPosts(prev => prev.filter(post => post.id !== postId));
     } catch (error) {
       console.error('Error deleting post:', error);
-      toast.error('Blog yazısı silinirken hata oluştu');
+      toast.error(t('messages.error.postDeleteError'));
     } finally {
       setDeleteLoading(null);
       setShowDeleteModal(null);
@@ -71,7 +73,6 @@ const Profile = () => {
   const truncateContent = (content, maxLength = 150) => {
     if (!content) return '';
     
-    // HTML etiketlerini kaldır
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = content;
     const textContent = tempDiv.textContent || tempDiv.innerText || '';
@@ -116,27 +117,27 @@ const Profile = () => {
 
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Yazılarım ({userPosts.length})
+          <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+            {t('forms.myPosts')}
           </h2>
         </div>
-
+        
         <div className="p-6">
           {userPosts.length === 0 ? (
             <div className="text-center py-12">
               <BookOpen className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                Henüz yazı yok
+                {t('forms.noPosts')}
               </h3>
               <p className="text-gray-600 dark:text-gray-300 mb-6">
-                İlk blog yazınızı yazmaya başlayın!
+                {t('forms.writeFirst')}
               </p>
               <Link
                 to="/create-post"
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
               >
                 <BookOpen className="h-5 w-5 mr-2" />
-                İlk Yazımı Yaz
+                {t('forms.writeFirstPost')}
               </Link>
             </div>
           ) : (
@@ -158,14 +159,14 @@ const Profile = () => {
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-700 rounded-md hover:bg-primary-100 dark:hover:bg-primary-900/30"
                       >
                         <Edit className="h-3 w-3 mr-1" />
-                        Düzenle
+                        {t('forms.editPostButton')}
                       </Link>
                       <button
                         onClick={() => setShowDeleteModal(post.id)}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30"
                       >
                         <Trash2 className="h-3 w-3 mr-1" />
-                        Sil
+                        {t('ui.delete')}
                       </button>
                     </div>
                   </div>
@@ -179,16 +180,18 @@ const Profile = () => {
                     </Link>
                   </h3>
 
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">
-                    {truncateContent(post.content)}
-                  </p>
+                  {post.content && (
+                    <p className="text-gray-600 dark:text-gray-300 mb-4">
+                      {truncateContent(post.content)}
+                    </p>
+                  )}
 
                   {post.tags && post.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {post.tags.map((tag) => (
+                      {post.tags.map((tag, index) => (
                         <span
-                          key={tag.id}
-                          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200"
+                          key={index}
+                          className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
                         >
                           <Tag className="h-3 w-3 mr-1" />
                           {tag.name}
@@ -212,11 +215,11 @@ const Profile = () => {
                 <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
               </div>
               <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100 mt-4">
-                Blog Yazısını Sil
+                {t('forms.deletePostConfirm')}
               </h3>
               <div className="mt-2 px-7 py-3">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Bu blog yazısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                  {t('forms.deletePostConfirmText')}
                 </p>
               </div>
               <div className="items-center px-4 py-3">
@@ -225,14 +228,14 @@ const Profile = () => {
                     onClick={() => setShowDeleteModal(null)}
                     className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-md hover:bg-gray-400 dark:hover:bg-gray-500 w-full"
                   >
-                    İptal
+                    {t('ui.cancel')}
                   </button>
                   <button
                     onClick={() => handleDeletePost(showDeleteModal)}
                     disabled={deleteLoading === showDeleteModal}
                     className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed w-full"
                   >
-                    {deleteLoading === showDeleteModal ? 'Siliniyor...' : 'Sil'}
+                    {deleteLoading === showDeleteModal ? t('ui.deleting') : t('ui.delete')}
                   </button>
                 </div>
               </div>

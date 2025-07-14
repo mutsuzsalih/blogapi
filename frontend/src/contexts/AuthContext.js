@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { authAPI } from '../services/api';
 import { toast } from 'react-toastify';
 import PropTypes from 'prop-types';
@@ -14,6 +15,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,11 +39,11 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
       
-      toast.success('Başarıyla giriş yapıldı!');
+      toast.success(t('messages.success.loginSuccess'));
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
-      const message = error.response?.data?.message || 'Giriş yapılırken hata oluştu';
+      const message = error.response?.data?.message || t('messages.error.loginError');
       console.log('Error message to show:', message);
       toast.error(message);
       return { success: false, message };
@@ -54,10 +56,10 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       await authAPI.register(userData);
-      toast.success('Kayıt başarılı! Şimdi giriş yapabilirsiniz.');
+      toast.success(t('messages.success.registerSuccess'));
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Kayıt olurken hata oluştu';
+      const message = error.response?.data?.message || t('messages.error.registerError');
       toast.error(message);
       return { success: false, message };
     } finally {
@@ -69,7 +71,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     setUser(null);
-    toast.success('Başarıyla çıkış yapıldı!');
+    toast.success(t('messages.success.logoutSuccess'));
   };
 
   const value = useMemo(() => ({

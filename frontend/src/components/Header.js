@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
 import { 
@@ -14,8 +15,10 @@ import {
   Moon,
   Sun
 } from 'lucide-react';
+import LanguageSwitcher from './LanguageSwitcher';
 
 const Header = () => {
+  const { t } = useTranslation();
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const { isDarkMode, toggleDarkMode } = useDarkMode();
   const navigate = useNavigate();
@@ -49,7 +52,7 @@ const Header = () => {
               }`}
             >
               <Home className="h-4 w-4" />
-              <span>Ana Sayfa</span>
+              <span>{t('navigation.home')}</span>
             </Link>
 
             {isAuthenticated && (
@@ -63,7 +66,7 @@ const Header = () => {
                   }`}
                 >
                   <PenTool className="h-4 w-4" />
-                  <span>Yazı Yaz</span>
+                  <span>{t('posts.createPost')}</span>
                 </Link>
 
                 <Link
@@ -75,7 +78,7 @@ const Header = () => {
                   }`}
                 >
                   <User className="h-4 w-4" />
-                  <span>Profil</span>
+                  <span>{t('navigation.profile')}</span>
                 </Link>
 
                 {isAdmin && (
@@ -88,7 +91,7 @@ const Header = () => {
                     }`}
                   >
                     <Shield className="h-4 w-4" />
-                    <span>Admin Panel</span>
+                    <span>{t('navigation.admin')}</span>
                   </Link>
                 )}
               </>
@@ -101,22 +104,25 @@ const Header = () => {
             <button
               onClick={toggleDarkMode}
               className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
-              title={isDarkMode ? 'Light Mode' : 'Dark Mode'}
+              title={isDarkMode ? t('ui.lightMode') : t('ui.darkMode')}
             >
               {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
 
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-700 dark:text-gray-300">
-                  Merhaba, <span className="font-medium">{user?.username}</span>
+                  {t('common.hello')}, <span className="font-medium">{user?.username}</span>
                 </span>
                 <button
                   onClick={handleLogout}
                   className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors duration-200"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span>Çıkış</span>
+                  <span>{t('navigation.logout')}</span>
                 </button>
               </div>
             ) : (
@@ -126,14 +132,14 @@ const Header = () => {
                   className="flex items-center space-x-1 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-md transition-colors duration-200"
                 >
                   <LogIn className="h-4 w-4" />
-                  <span>Giriş</span>
+                  <span>{t('navigation.login')}</span>
                 </Link>
                 <Link
                   to="/register"
                   className="flex items-center space-x-1 px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 dark:bg-primary-700 dark:hover:bg-primary-800 rounded-md transition-colors duration-200"
                 >
                   <UserPlus className="h-4 w-4" />
-                  <span>Kayıt Ol</span>
+                  <span>{t('navigation.register')}</span>
                 </Link>
               </div>
             )}

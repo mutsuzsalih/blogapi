@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { postsAPI, tagsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'react-toastify';
@@ -8,6 +9,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
 const EditPost = () => {
+  const { t } = useTranslation();
   const { id } = useParams();
   const [formData, setFormData] = useState({
     title: '',
@@ -38,7 +40,7 @@ const EditPost = () => {
       });
     } catch (error) {
       console.error('Error fetching post:', error);
-      toast.error('Blog yazısı yüklenirken hata oluştu');
+      toast.error(t('messages.error.postsLoadError'));
       navigate('/');
     } finally {
       setPageLoading(false);
@@ -61,7 +63,6 @@ const EditPost = () => {
       [name]: value
     }));
     
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -76,7 +77,6 @@ const EditPost = () => {
       content: content
     }));
     
-    // Clear error when user starts typing
     if (errors.content) {
       setErrors(prev => ({
         ...prev,
@@ -98,20 +98,19 @@ const EditPost = () => {
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Başlık gerekli';
+      newErrors.title = t('validation.title');
     } else if (formData.title.length < 5) {
-      newErrors.title = 'Başlık en az 5 karakter olmalı';
+      newErrors.title = t('validation.titleMin');
     }
 
-    // HTML içeriğini text'e çevir validation için
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = formData.content;
     const textContent = tempDiv.textContent || tempDiv.innerText || '';
 
     if (!textContent.trim()) {
-      newErrors.content = 'İçerik gerekli';
+      newErrors.content = t('validation.content');
     } else if (textContent.length < 50) {
-      newErrors.content = 'İçerik en az 50 karakter olmalı';
+      newErrors.content = t('validation.contentMin');
     }
 
     setErrors(newErrors);
@@ -125,13 +124,13 @@ const EditPost = () => {
 
     try {
       setLoading(true);
-      const response = await postsAPI.updatePost(id, formData);
-      toast.success('Blog yazısı başarıyla güncellendi!');
-      navigate(`/post/${response.data.id}`);
+      await postsAPI.updatePost(id, formData);
+      toast.success(t('messages.success.postUpdated'));
+      navigate(`/post/${id}`);
     } catch (error) {
       console.error('Error updating post:', error);
       
-      let errorMessage = 'Blog yazısı güncellenirken hata oluştu';
+      let errorMessage = t('messages.error.postUpdateError');
       
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -140,9 +139,9 @@ const EditPost = () => {
         const firstError = Object.values(validationErrors)[0];
         errorMessage = firstError || errorMessage;
       } else if (error.request) {
-        errorMessage = 'Sunucuya ulaşılamıyor. Lütfen backend\'in çalıştığından emin olun.';
+        errorMessage = t('messages.error.serverConnection');
       } else {
-        errorMessage = 'Beklenmeyen bir hata oluştu';
+        errorMessage = t('messages.error.unexpected');
       }
       
       toast.error(errorMessage);
@@ -165,9 +164,9 @@ const EditPost = () => {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Blog Yazısını Düzenle</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{t('forms.editPostTitle')}</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-            Yazınızı güncelleyin
+            {t('forms.newPostSubtitle')}
           </p>
         </div>
 
@@ -175,7 +174,7 @@ const EditPost = () => {
           {/* Title */}
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Başlık *
+              {t('posts.title')} *
             </label>
             <input
               type="text"
@@ -186,7 +185,7 @@ const EditPost = () => {
               className={`w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                 errors.title ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
-              placeholder="Blog yazınız için çekici bir başlık..."
+              placeholder={t('forms.titlePlaceholder')}
             />
             {errors.title && (
               <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title}</p>
@@ -196,14 +195,14 @@ const EditPost = () => {
           {/* Content */}
           <div>
             <label htmlFor="content-editor" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              İçerik *
+              {t('posts.content')} *
             </label>
             <div className={`border rounded-md ${errors.content ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}>
               <ReactQuill
                 id="content-editor"
                 value={formData.content}
                 onChange={handleContentChange}
-                placeholder="Blog yazınızın içeriğini buraya yazın..."
+                placeholder={t('forms.contentPlaceholder')}
                 modules={{
                   toolbar: [
                     [{ 'header': [1, 2, 3, false] }],
@@ -234,20 +233,20 @@ const EditPost = () => {
                 tempDiv.innerHTML = formData.content;
                 const textContent = tempDiv.textContent || tempDiv.innerText || '';
                 return textContent.length;
-              })()} karakter (minimum 50 karakter)
+              })()} {t('forms.characterCount', { current: '', min: 50 }).replace('{current} ', '')}
             </p>
           </div>
 
           {/* Tags */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Etiketler
-            </label>
+            <div className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t('posts.tags')}
+            </div>
             
             {/* Selected Tags */}
             {selectedTags.length > 0 && (
               <div className="mb-3">
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Seçili etiketler:</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">{t('forms.selectedTags')}</p>
                 <div className="flex flex-wrap gap-2">
                   {selectedTags.map(tag => (
                     <span
@@ -271,11 +270,11 @@ const EditPost = () => {
 
             {/* Available Tags */}
             <div className="space-y-3">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Mevcut etiketler:</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{t('forms.availableTags')}</p>
               {availableTags.length === 0 ? (
                 <div className="text-center py-4">
                   <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                    Henüz etiket yok.
+                    {t('forms.noTags')}
                   </p>
                   {isAdmin && (
                     <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -304,13 +303,13 @@ const EditPost = () => {
           </div>
 
           {/* Submit Buttons */}
-          <div className="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex space-x-3 pt-4">
             <button
               type="button"
               onClick={() => navigate(-1)}
               className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600"
             >
-              İptal
+              {t('ui.cancel')}
             </button>
             <button
               type="submit"
@@ -320,12 +319,12 @@ const EditPost = () => {
               {loading ? (
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Güncelleniyor...
+                  {t('forms.updating')}
                 </div>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Güncelle
+                  {t('forms.updatePost')}
                 </>
               )}
             </button>

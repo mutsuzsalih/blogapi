@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import { UserPlus, Eye, EyeOff, Mail, Lock, User } from 'lucide-react';
 
 const Register = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -23,7 +25,6 @@ const Register = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -36,27 +37,27 @@ const Register = () => {
     const newErrors = {};
 
     if (!formData.username.trim()) {
-      newErrors.username = 'Kullanıcı adı gerekli';
+      newErrors.username = t('validation.usernameRequired');
     } else if (formData.username.length < 3) {
-      newErrors.username = 'Kullanıcı adı en az 3 karakter olmalı';
+      newErrors.username = t('validation.usernameMinLength');
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'E-posta adresi gerekli';
+      newErrors.email = t('validation.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Geçerli bir e-posta adresi girin';
+      newErrors.email = t('validation.emailInvalid');
     }
 
     if (!formData.password.trim()) {
-      newErrors.password = 'Şifre gerekli';
+      newErrors.password = t('validation.passwordRequired');
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Şifre en az 6 karakter olmalı';
+      newErrors.password = t('validation.passwordMinLength');
     }
 
     if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Şifre tekrarı gerekli';
+      newErrors.confirmPassword = t('validation.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Şifreler eşleşmiyor';
+      newErrors.confirmPassword = t('validation.passwordMatch');
     }
 
     setErrors(newErrors);
@@ -82,15 +83,15 @@ const Register = () => {
           <UserPlus className="h-12 w-12 text-primary-600" />
         </div>
         <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
-          Yeni hesap oluşturun
+          {t('forms.registerTitle')}
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-300">
-          Zaten hesabınız var mı?{' '}
+          {t('forms.haveAccount')}{' '}
           <Link
             to="/login"
             className="font-medium text-primary-600 hover:text-primary-500 dark:text-primary-400 dark:hover:text-primary-300"
           >
-            Giriş yapın
+            {t('forms.signInNow')}
           </Link>
         </p>
       </div>
@@ -100,7 +101,7 @@ const Register = () => {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Kullanıcı Adı
+                {t('auth.username')}
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -116,7 +117,7 @@ const Register = () => {
                   className={`block w-full pl-10 pr-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                     errors.username ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="kullaniciadi"
+                  placeholder={t('forms.usernamePlaceholder')}
                 />
               </div>
               {errors.username && (
@@ -126,7 +127,7 @@ const Register = () => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                E-posta adresi
+                {t('auth.email')}
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -142,7 +143,7 @@ const Register = () => {
                   className={`block w-full pl-10 pr-3 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                     errors.email ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="ornek@email.com"
+                  placeholder={t('forms.emailPlaceholder')}
                 />
               </div>
               {errors.email && (
@@ -152,7 +153,7 @@ const Register = () => {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Şifre
+                {t('auth.password')}
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -191,7 +192,7 @@ const Register = () => {
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Şifre Tekrarı
+                {t('auth.confirmPassword')}
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -207,7 +208,7 @@ const Register = () => {
                   className={`block w-full pl-10 pr-10 py-2 border rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500 ${
                     errors.confirmPassword ? 'border-red-300 dark:border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
-                  placeholder="••••••••"
+                  placeholder={t('forms.confirmPasswordPlaceholder')}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <button
@@ -237,10 +238,10 @@ const Register = () => {
                 {loading ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Kayıt yapılıyor...
+                    {t('ui.loading')}
                   </div>
                 ) : (
-                  'Kayıt Ol'
+                  t('auth.register')
                 )}
               </button>
             </div>

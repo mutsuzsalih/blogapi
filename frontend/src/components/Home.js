@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { postsAPI } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -14,6 +15,7 @@ import {
 import { toast } from 'react-toastify';
 
 const Home = () => {
+  const { t } = useTranslation();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,9 +39,9 @@ const Home = () => {
       setTotalElements(response.data.totalElements || 0);
     } catch (error) {
       if (error.response) {
-        toast.error('Blog yazıları yüklenirken hata oluştu');
+        toast.error(t('messages.error.postsLoadError'));
       } else if (error.request) {
-        console.warn('Backend\'e ulaşılamıyor, boş sayfa gösteriliyor');
+        console.warn(t('forms.serverOffline'));
       } else {
         console.error('Error fetching posts:', error);
       }
@@ -95,10 +97,10 @@ const Home = () => {
       {/* Hero Section */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-          Blog Yazılarını Keşfet
+          {t('forms.heroTitle')}
         </h1>
         <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-          En son yazıları okuyun ve kendi deneyimlerinizi paylaşın
+          {t('forms.heroSubtitle')}
         </p>
         
         {/* Search Bar */}
@@ -108,7 +110,7 @@ const Home = () => {
           </div>
           <input
             type="text"
-            placeholder="Blog yazılarında ara..."
+            placeholder={t('forms.searchPlaceholder')}
             value={searchTerm}
             onChange={handleSearchChange}
             onKeyDown={handleSearch}
@@ -123,7 +125,7 @@ const Home = () => {
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
             >
               <BookOpen className="h-5 w-5 mr-2" />
-              Yeni Yazı Yaz
+              {t('forms.newPostButton')}
             </Link>
           </div>
         )}
@@ -133,7 +135,7 @@ const Home = () => {
       {totalElements > 0 && (
         <div className="mb-8">
           <p className="text-gray-600 dark:text-gray-300">
-            Toplam {totalElements} yazı bulundu
+            {t('ui.total', { count: totalElements, item: t('forms.postsFound') })}
           </p>
         </div>
       )}
@@ -143,10 +145,10 @@ const Home = () => {
         <div className="text-center py-12">
           <BookOpen className="h-16 w-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-            Henüz blog yazısı yok
+            {t('forms.noPostsYet')}
           </h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            İlk blog yazısını yazmaya ne dersin?
+            {t('forms.writeFirstPost')}
           </p>
           {isAuthenticated && (
             <Link
@@ -154,7 +156,7 @@ const Home = () => {
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
             >
               <BookOpen className="h-5 w-5 mr-2" />
-              İlk Yazını Yaz
+              {t('forms.writeFirstPost')}
             </Link>
           )}
         </div>
