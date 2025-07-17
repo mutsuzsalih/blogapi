@@ -31,8 +31,11 @@ Modern, responsive React frontend for the Blog API application.
 
 2. **Create environment file:**
    ```bash
-   # Create .env file with:
-   REACT_APP_API_URL=http://localhost:8080/api
+   # Setup environment configuration:
+   cp .env.example .env
+   
+   # Configure API endpoint:
+   # REACT_APP_API_URL=http://localhost:8080/api
    ```
 
 3. **Start development server:**

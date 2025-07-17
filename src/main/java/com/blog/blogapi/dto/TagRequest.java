@@ -5,8 +5,8 @@ import jakarta.validation.constraints.Size;
 
 public class TagRequest {
 
-    @NotBlank(message = "Tag name cannot be blank")
-    @Size(max = 50, message = "Tag name cannot be longer than 50 characters")
+    @NotBlank(message = "{validation.tagname.notblank}")
+    @Size(max = 50, message = "{validation.tagname.size}")
     private String name;
 
     public String getName() {

@@ -25,10 +25,10 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BadCredentialsException("E-posta adresi veya şifre hatalı"));
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("E-posta adresi veya şifre hatalı");
+            throw new BadCredentialsException("Invalid credentials");
         }
 
         String jwt = jwtUtil.generateToken(user);

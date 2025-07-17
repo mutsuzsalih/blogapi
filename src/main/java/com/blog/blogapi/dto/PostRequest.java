@@ -9,12 +9,12 @@ import lombok.Data;
 @Data
 public class PostRequest {
 
-    @NotBlank(message = "Title cannot be blank")
-    @Size(max = 255, message = "Title cannot be longer than 255 characters")
+    @NotBlank(message = "{validation.title.notblank}")
+    @Size(max = 255, message = "{validation.title.size}")
     private String title;
 
-    @NotBlank(message = "Content cannot be blank")
-    @Size(min = 10, message = "Content must be at least 10 characters")
+    @NotBlank(message = "{validation.content.notblank}")
+    @Size(min = 10, message = "{validation.content.size}")
     private String content;
 
     private List<Long> tagIds;

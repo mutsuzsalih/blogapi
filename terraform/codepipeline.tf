@@ -1,21 +1,6 @@
 # CodePipeline, CodeBuild, and related resources
 
-# Variables for GitHub connection
-variable "github_owner" {
-  description = "GitHub repository owner"
-  type        = string
-}
-
-variable "github_repo" {
-  description = "GitHub repository name"
-  type        = string
-}
-
-variable "github_branch" {
-  description = "GitHub repository branch"
-  type        = string
-  default     = "main"
-}
+# CodePipeline, CodeBuild, and related resources
 
 
 
@@ -28,9 +13,9 @@ resource "random_id" "id" {
   byte_length = 8
 }
 
-# IAM role for CodeBuild
+# IAM role for Backend CodeBuild
 resource "aws_iam_role" "codebuild_role" {
-  name = "${var.project_name}-codebuild-role"
+  name = "${var.project_name}-backend-codebuild-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
@@ -41,9 +26,22 @@ resource "aws_iam_role" "codebuild_role" {
   })
 }
 
-# IAM role policy for CodeBuild
+# IAM role for Frontend CodeBuild
+resource "aws_iam_role" "codebuild_frontend_role" {
+  name = "${var.project_name}-frontend-codebuild-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect    = "Allow",
+      Principal = { Service = "codebuild.amazonaws.com" },
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+# IAM role policy for Backend CodeBuild
 resource "aws_iam_role_policy" "codebuild_policy" {
-  name = "${var.project_name}-codebuild-policy"
+  name = "${var.project_name}-backend-codebuild-policy"
   role = aws_iam_role.codebuild_role.id
   policy = jsonencode({
     Version = "2012-10-17",
@@ -99,6 +97,61 @@ resource "aws_iam_role_policy" "codebuild_policy" {
   })
 }
 
+# IAM role policy for Frontend CodeBuild
+resource "aws_iam_role_policy" "codebuild_frontend_policy" {
+  name = "${var.project_name}-frontend-codebuild-policy"
+  role = aws_iam_role.codebuild_frontend_role.id
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject",
+          "s3:GetObjectVersion",
+          "s3:PutObject",
+          "s3:GetBucketAcl",
+          "s3:GetBucketLocation"
+        ],
+        Resource = [
+          aws_s3_bucket.codepipeline_artifacts.arn,
+          "${aws_s3_bucket.codepipeline_artifacts.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:PutObject",
+          "s3:PutObjectAcl",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ],
+        Resource = [
+          aws_s3_bucket.frontend_bucket.arn,
+          "${aws_s3_bucket.frontend_bucket.arn}/*"
+        ]
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "cloudfront:CreateInvalidation"
+        ],
+        Resource = aws_cloudfront_distribution.s3_distribution.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ],
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # IAM role for CodePipeline
 resource "aws_iam_role" "codepipeline_role" {
   name = "${var.project_name}-codepipeline-role"
@@ -138,7 +191,10 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
           "codebuild:StartBuild",
           "codebuild:BatchGetBuilds"
         ],
-        Resource = aws_codebuild_project.app.arn
+        Resource = [
+          aws_codebuild_project.app.arn,
+          aws_codebuild_project.frontend.arn
+        ]
       },
       {
         Effect = "Allow",
@@ -167,10 +223,10 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
   })
 }
 
-# CodeBuild project
+# CodeBuild project for Backend
 resource "aws_codebuild_project" "app" {
-  name          = "${var.project_name}-codebuild"
-  description   = "Builds the Docker image for the application"
+  name          = "${var.project_name}-backend-codebuild"
+  description   = "Builds the Docker image for the backend application"
   service_role  = aws_iam_role.codebuild_role.arn
   build_timeout = "30"
 
@@ -213,6 +269,40 @@ resource "aws_codebuild_project" "app" {
   }
 }
 
+# CodeBuild project for Frontend
+resource "aws_codebuild_project" "frontend" {
+  name          = "${var.project_name}-frontend-codebuild"
+  description   = "Builds and deploys the React frontend application"
+  service_role  = aws_iam_role.codebuild_frontend_role.arn
+  build_timeout = "30"
+
+  artifacts {
+    type = "CODEPIPELINE"
+  }
+
+  environment {
+    compute_type                = "BUILD_GENERAL1_SMALL"
+    type                        = "LINUX_CONTAINER"
+    image                       = "aws/codebuild/standard:5.0"
+    privileged_mode             = false
+    image_pull_credentials_type = "CODEBUILD"
+
+    environment_variable {
+      name  = "S3_BUCKET"
+      value = aws_s3_bucket.frontend_bucket.id
+    }
+    environment_variable {
+      name  = "CLOUDFRONT_DISTRIBUTION_ID"
+      value = aws_cloudfront_distribution.s3_distribution.id
+    }
+  }
+
+  source {
+    type      = "CODEPIPELINE"
+    buildspec = "frontend-buildspec.yml"
+  }
+}
+
 data "aws_caller_identity" "current" {}
 
 # CodePipeline
@@ -246,17 +336,34 @@ resource "aws_codepipeline" "app" {
 
   stage {
     name = "Build"
+    
     action {
-      name             = "Build"
+      name             = "BackendBuild"
       category         = "Build"
       owner            = "AWS"
       provider         = "CodeBuild"
       version          = "1"
       input_artifacts  = ["source_output"]
-      output_artifacts = ["build_output"]
+      output_artifacts = ["backend_build_output"]
+      run_order        = 1
 
       configuration = {
         ProjectName = aws_codebuild_project.app.name
+      }
+    }
+
+    action {
+      name             = "FrontendBuild"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      version          = "1"
+      input_artifacts  = ["source_output"]
+      output_artifacts = ["frontend_build_output"]
+      run_order        = 1
+
+      configuration = {
+        ProjectName = aws_codebuild_project.frontend.name
       }
     }
   }
@@ -264,12 +371,12 @@ resource "aws_codepipeline" "app" {
   stage {
     name = "Deploy"
     action {
-      name            = "Deploy"
+      name            = "BackendDeploy"
       category        = "Deploy"
       owner           = "AWS"
       provider        = "ECS"
       version         = "1"
-      input_artifacts = ["build_output"]
+      input_artifacts = ["backend_build_output"]
 
       configuration = {
         ClusterName = aws_ecs_cluster.main.name

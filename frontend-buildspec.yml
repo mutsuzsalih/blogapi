@@ -1,0 +1,36 @@
+# Frontend CI/CD Build Configuration
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+    commands:
+      - cd frontend
+      - npm ci
+  
+  pre_build:
+    commands:
+      - echo Pre-build started on `date`
+      - echo Building the React application...
+  
+  build:
+    commands:
+      - echo Build started on `date`
+      - npm run build
+      - echo Build completed on `date`
+  
+  post_build:
+    commands:
+      - echo Post-build started on `date`
+      - echo Uploading to S3 bucket $S3_BUCKET...
+      - aws s3 sync build/ s3://$S3_BUCKET --delete
+      - echo Invalidating CloudFront distribution $CLOUDFRONT_DISTRIBUTION_ID...
+      - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"
+      - echo Frontend deployment completed on `date`
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: frontend/build
+  name: frontend-build-$(date +%Y-%m-%d) 

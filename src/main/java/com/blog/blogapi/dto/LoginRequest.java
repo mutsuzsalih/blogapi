@@ -7,10 +7,10 @@ import lombok.Data;
 @Data
 public class LoginRequest {
 
-    @NotBlank(message = "E-posta adresi boş olamaz")
-    @Email(message = "Geçerli bir e-posta adresi giriniz")
+    @NotBlank(message = "{validation.email.notblank}")
+    @Email(message = "{validation.email.invalid}")
     private String email;
 
-    @NotBlank(message = "Şifre boş olamaz")
+    @NotBlank(message = "{validation.password.notblank}")
     private String password;
 }
