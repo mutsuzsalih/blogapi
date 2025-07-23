@@ -1,70 +1,187 @@
-# Getting Started with Create React App
+# Blog API Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Modern, responsive React frontend for the Blog API application.
 
-## Available Scripts
+## 🚀 Features
 
-In the project directory, you can run:
+- **Modern UI**: Clean and responsive design with Tailwind CSS
+- **Authentication**: Secure login/register system with JWT tokens
+- **Blog Management**: Create, read, update, and delete blog posts
+- **Tag System**: Dynamic tag management for posts
+- **Pagination**: Support for large datasets
+- **Responsive Design**: Mobile and desktop compatible
+- **Real-time Notifications**: Toast messages for user feedback
 
-### `npm start`
+## 🛠️ Tech Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **React 19**: Latest React version
+- **React Router**: Page navigation and routing
+- **Tailwind CSS**: Modern CSS framework
+- **Axios**: HTTP requests
+- **Lucide React**: Modern icons
+- **React Toastify**: Notification system
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## 📦 Setup
 
-### `npm test`
+1. **Install dependencies:**
+   ```bash
+   cd frontend
+   npm install --legacy-peer-deps
+   ```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+2. **Create environment file:**
+   ```bash
+   # Setup environment configuration:
+   cp .env.example .env
+   
+   # Configure API endpoint:
+   # REACT_APP_API_URL=http://localhost:8080/api
+   ```
 
-### `npm run build`
+3. **Start development server:**
+   ```bash
+   npm start
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🏗️ Project Structure
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+frontend/
+├── public/                 # Static files
+├── src/
+│   ├── components/        # React components
+│   │   ├── Header.js     # Navigation header
+│   │   ├── Login.js      # Login page
+│   │   ├── Register.js   # Register page
+│   │   ├── Home.js       # Home page (blog list)
+│   │   ├── CreatePost.js # Post creation
+│   │   ├── PostDetail.js # Post detail page
+│   │   └── Profile.js    # User profile
+│   ├── contexts/         # React contexts
+│   │   └── AuthContext.js # Authentication context
+│   ├── services/         # API services
+│   │   └── api.js        # Axios API configuration
+│   ├── App.js            # Main app component
+│   └── index.js          # React entry point
+├── tailwind.config.js     # Tailwind CSS config
+├── postcss.config.js      # PostCSS config
+└── package.json           # Project dependencies
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🔗 Routes
 
-### `npm run eject`
+- `/` - Home page (blog posts list)
+- `/login` - Login page
+- `/register` - Register page
+- `/create-post` - Create new post (auth required)
+- `/post/:id` - Post detail page
+- `/profile` - User profile (auth required)
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## 🎨 Design Features
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Colors
+- **Primary**: Blue tones (#3b82f6)
+- **Gray**: Various gray tones for text and backgrounds
+- **Success**: Green tones for success messages
+- **Error**: Red tones for error messages
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Components
+- **Card Layout**: Modern card design
+- **Responsive Grid**: Automatic grid layout
+- **Loading States**: Loading animations
+- **Form Validation**: Real-time form validation
+- **Toast Notifications**: User notifications
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## 🔐 Authentication
 
-## Learn More
+Frontend uses JWT token-based authentication:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Token stored in localStorage
+- Automatic token management
+- Protected routes with authentication guard
+- Logout functionality with token cleanup
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 📱 Responsive Design
 
-### Code Splitting
+- **Mobile First**: Mobile-first approach
+- **Breakpoints**: Tailwind CSS standard breakpoints
+- **Touch Friendly**: Optimized for mobile devices
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 🚦 API Integration
 
-### Analyzing the Bundle Size
+Frontend uses the following API endpoints:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Authentication
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
 
-### Making a Progressive Web App
+### Posts
+- `GET /api/posts` - Blog posts list (with pagination)
+- `GET /api/posts/{id}` - Single post detail
+- `POST /api/posts` - Create new post
+- `PUT /api/posts/{id}` - Update post
+- `DELETE /api/posts/{id}` - Delete post
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Tags
+- `GET /api/tags` - Tags list
+- `POST /api/tags` - Create new tag
 
-### Advanced Configuration
+### Users
+- `GET /api/users/profile` - User profile
+- `GET /api/posts/user/{userId}` - User's posts
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## 🔧 Development
 
-### Deployment
+### Adding New Component
+```jsx
+import React from 'react';
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+const NewComponent = () => {
+  return (
+    <div className="bg-white shadow rounded-lg p-6">
+      {/* Component content */}
+    </div>
+  );
+};
 
-### `npm run build` fails to minify
+export default NewComponent;
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Making API Calls
+```jsx
+import { postsAPI } from '../services/api';
+
+const fetchPosts = async () => {
+  try {
+    const response = await postsAPI.getAllPosts();
+    console.log(response.data);
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+```
+
+## 📝 Usage Scenarios
+
+1. **Guest User**:
+   - View blog posts on home page
+   - Read post details
+   - Register or login
+
+2. **Authenticated User**:
+   - All guest features plus:
+   - Create new blog posts
+   - Edit/delete own posts
+   - View profile page
+   - Create tags
+
+## 🎯 Future Features
+
+- [ ] Post search functionality
+- [ ] Comment system
+- [ ] Social media sharing
+- [ ] Dark mode
+- [ ] Draft system
+- [ ] Markdown support
+- [ ] Image upload
+- [ ] Real-time notifications

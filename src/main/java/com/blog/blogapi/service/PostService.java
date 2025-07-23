@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +57,21 @@ public class PostService {
         return toPostResponse(post);
     }
 
-    public List<PostResponse> getAllPosts() {
-        return postRepository.findAll().stream()
+    public Page<PostResponse> getAllPosts(Pageable pageable) {
+        return postRepository.findAll(pageable)
+                .map(this::toPostResponse);
+    }
+
+    public Page<PostResponse> searchPosts(String searchTerm, Pageable pageable) {
+        if (searchTerm == null || searchTerm.trim().isEmpty()) {
+            return getAllPosts(pageable);
+        }
+        return postRepository.searchPosts(searchTerm.trim(), pageable)
+                .map(this::toPostResponse);
+    }
+
+    public List<PostResponse> getPostsByUser(Long userId) {
+        return postRepository.findByAuthor_Id(userId).stream()
                 .map(this::toPostResponse)
                 .toList();
     }
@@ -89,6 +104,7 @@ public class PostService {
         dto.setId(post.getId());
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
+        dto.setCreatedAt(post.getCreatedAt());
 
         if (post.hasAuthor()) {
             dto.setAuthorId(post.getAuthorId());
@@ -96,10 +112,15 @@ public class PostService {
         }
         Set<Tag> tags = post.getTags();
         if (tags != null && !tags.isEmpty()) {
-            List<String> tagNames = tags.stream()
-                    .map(Tag::getName)
+            List<com.blog.blogapi.dto.TagResponse> tagResponses = tags.stream()
+                    .map(tag -> {
+                        com.blog.blogapi.dto.TagResponse tagResponse = new com.blog.blogapi.dto.TagResponse();
+                        tagResponse.setId(tag.getId());
+                        tagResponse.setName(tag.getName());
+                        return tagResponse;
+                    })
                     .toList();
-            dto.setTags(tagNames);
+            dto.setTags(tagResponses);
         } else {
             dto.setTags(List.of());
         }

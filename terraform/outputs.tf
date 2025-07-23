@@ -51,4 +51,19 @@ output "ecs_cluster_name" {
 output "ecs_service_name" {
   description = "ECS service name"
   value       = aws_ecs_service.app.name
+}
+
+output "codepipeline_name" {
+  description = "CodePipeline name"
+  value       = aws_codepipeline.app.name
+}
+
+output "backend_codebuild_project" {
+  description = "Backend CodeBuild project name"
+  value       = aws_codebuild_project.app.name
+}
+
+output "frontend_codebuild_project" {
+  description = "Frontend CodeBuild project name"
+  value       = aws_codebuild_project.frontend.name
 } 

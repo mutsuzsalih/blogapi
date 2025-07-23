@@ -39,6 +39,7 @@ build/
 
 ### VS Code ###
 .vscode/
+.history/
 
 ### Logs ###
 logs/
@@ -54,14 +55,27 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
+### Node.js & Frontend ###
+frontend/node_modules/
+frontend/build/
+frontend/.env*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+node_modules/
+coverage/
+
 ### OS ###
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
 
 ### Application Specific ###
 application-local.properties
 application-dev.properties
 application-prod.properties
+
 ### Test outputs ###
 /test/
 

@@ -24,16 +24,26 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new BadCredentialsException("Invalid username or password"));
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BadCredentialsException("Invalid username or password");
+            throw new BadCredentialsException("Invalid credentials");
         }
 
         String jwt = jwtUtil.generateToken(user);
         LoginResponse response = new LoginResponse();
         response.setToken(jwt);
+        response.setUser(toUserResponse(user));
         return response;
+    }
+
+    private LoginResponse.UserInfo toUserResponse(User user) {
+        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
+        userInfo.setId(user.getId());
+        userInfo.setUsername(user.getUsername());
+        userInfo.setEmail(user.getEmail());
+        userInfo.setRole(user.getRole() != null ? user.getRoleName() : null);
+        return userInfo;
     }
 }

@@ -12,7 +12,7 @@ services:
 
   app:
     build: .
-    container_name: blogapi-app
+    container_name: thoughtspace-app
     ports:
       - "8080:8080"
     depends_on:

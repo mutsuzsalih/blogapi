@@ -5,7 +5,7 @@ resource "random_pet" "bucket_suffix" {
 
 # S3 bucket to store the static files of the React app
 resource "aws_s3_bucket" "frontend_bucket" {
-  bucket = "my-react-app-bucket-${random_pet.bucket_suffix.id}"
+  bucket = "thoughtspace-frontend-${random_pet.bucket_suffix.id}"
 }
 
 resource "aws_s3_bucket_ownership_controls" "frontend_bucket_ownership" {
@@ -61,7 +61,7 @@ resource "aws_cloudfront_distribution" "s3_distribution" {
 
   enabled             = true
   is_ipv6_enabled     = true
-  comment             = "CloudFront distribution for my-react-app"
+  comment             = "CloudFront distribution for ThoughtSpace"
   default_root_object = "index.html"
 
   default_cache_behavior {

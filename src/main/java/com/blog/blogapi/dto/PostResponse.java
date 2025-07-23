@@ -1,5 +1,6 @@
 package com.blog.blogapi.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import lombok.Data;
@@ -12,5 +13,6 @@ public class PostResponse {
     private String content;
     private Long authorId;
     private String authorUsername;
-    private List<String> tags;
+    private List<TagResponse> tags;
+    private LocalDateTime createdAt;
 }

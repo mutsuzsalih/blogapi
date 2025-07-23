@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "The name of the project"
   type        = string
-  default     = "blogapi"
+  default     = "thoughtspace"
 }
 
 variable "aws_region" {
@@ -13,11 +13,27 @@ variable "aws_region" {
 variable "db_name" {
   description = "The name of the database"
   type        = string
-  default     = "blogapidb"
+  default     = "thoughtspacedb"
 }
 
 variable "db_user" {
   description = "Username for the RDS database"
   type        = string
+}
+
+variable "github_owner" {
+  description = "GitHub repository owner"
+  type        = string
+}
+
+variable "github_repo" {
+  description = "GitHub repository name"
+  type        = string
+}
+
+variable "github_branch" {
+  description = "GitHub repository branch"
+  type        = string
+  default     = "main"
 }
 

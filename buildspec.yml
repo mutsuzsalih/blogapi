@@ -1,4 +1,4 @@
-# Build specification for the Blog API
+# Backend CI/CD Build Configuration
 version: 0.2
 
 phases:

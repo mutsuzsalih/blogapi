@@ -8,15 +8,15 @@ import lombok.Data;
 @Data
 public class UserRegistrationRequest {
 
-    @NotBlank(message = "Username cannot be blank")
-    @Size(min = 3, max = 32, message = "Username must be between 3 and 32 characters")
+    @NotBlank(message = "{validation.username.notblank}")
+    @Size(min = 3, max = 32, message = "{validation.username.size}")
     private String username;
 
-    @NotBlank(message = "Email cannot be blank")
-    @Email(message = "Email should be valid")
+    @NotBlank(message = "{validation.email.notblank}")
+    @Email(message = "{validation.email.invalid}")
     private String email;
 
-    @NotBlank(message = "Password cannot be blank")
-    @Size(min = 6, max = 128, message = "Password must be between 6 and 128 characters")
+    @NotBlank(message = "{validation.password.notblank}")
+    @Size(min = 6, max = 128, message = "{validation.password.size}")
     private String password;
 }

@@ -1,0 +1,12 @@
+# Project configuration
+project_name = "thoughtspace"
+aws_region   = "us-east-1"
+
+# Database configuration  
+db_name = "thoughtspacedb"
+db_user = "dbuser"
+
+# GitHub repository configuration
+github_owner  = "username"
+github_repo   = "repository"
+github_branch = "main" 
