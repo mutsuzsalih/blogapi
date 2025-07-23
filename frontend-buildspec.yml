@@ -12,6 +12,8 @@ phases:
   pre_build:
     commands:
       - echo Pre-build started on `date`
+      - echo Setting up environment variables...
+      - echo "REACT_APP_API_URL=https://$BACKEND_URL/api" > .env
       - echo Building the React application...
   
   build:

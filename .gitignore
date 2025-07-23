@@ -100,3 +100,19 @@ override.tf
 override.tf.json
 .terraformrc
 terraform.rc
+
+### Security & Secrets ###
+*.key
+*.pem
+*.crt
+*.p12
+*.jks
+secrets.properties
+credentials.json
+aws-credentials
+.aws/
+
+### Production Configs ###
+application-prod.properties.local
+application-staging.properties
+config/prod/

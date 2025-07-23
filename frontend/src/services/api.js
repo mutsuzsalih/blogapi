@@ -75,4 +75,13 @@ export const usersAPI = {
   getUserById: (id) => api.get(`/users/${id}`),
 };
 
+// Localization API
+export const localizationAPI = {
+  getMessages: (locale) => api.get(`/localization/messages/${locale}`),
+  getMessage: (key, locale = 'en') => api.get('/localization/message', { params: { key, locale } }),
+  createMessage: (message) => api.post('/localization/messages', message),
+  updateMessage: (id, message) => api.put(`/localization/messages/${id}`, message),
+  deleteMessage: (id) => api.delete(`/localization/messages/${id}`),
+};
+
 export default api; 

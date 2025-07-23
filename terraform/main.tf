@@ -1,3 +1,14 @@
+# Terraform backend configuration for remote state
+terraform {
+  backend "s3" {
+    bucket         = "thoughtspace-terraform-state-bucket"
+    key            = "thoughtspace/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "thoughtspace-terraform-locks"
+  }
+}
+
 # Define data sources for existing AWS resources
 data "aws_ami" "ubuntu" {
   most_recent = true

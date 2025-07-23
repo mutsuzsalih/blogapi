@@ -295,6 +295,10 @@ resource "aws_codebuild_project" "frontend" {
       name  = "CLOUDFRONT_DISTRIBUTION_ID"
       value = aws_cloudfront_distribution.s3_distribution.id
     }
+    environment_variable {
+      name  = "BACKEND_URL"
+      value = "thoughtspace-backend-alb-${random_id.id.hex}.${var.aws_region}.elb.amazonaws.com"
+    }
   }
 
   source {

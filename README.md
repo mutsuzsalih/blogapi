@@ -178,11 +178,15 @@ blogapi/
 
 ## 🔐 Security
 
-- JWT-based authentication with automatic token management
-- Role-based authorization (User/Admin)
-- Password encryption
-- Protected routes on frontend
-- CORS configuration for secure frontend-backend communication
+- **JWT Authentication**: Secure token-based authentication with configurable secret
+- **Role-based Authorization**: USER/ADMIN roles with method-level security
+- **Password Encryption**: BCrypt hashing for all passwords
+- **Environment Variables**: All sensitive data via environment variables
+- **Production Security**: Swagger disabled, restricted actuator endpoints
+- **CORS Protection**: Configurable allowed origins for production
+- **Secure Headers**: HTTP-only cookies, secure flags, CSRF protection
+- **Database Security**: Connection pooling, prepared statements
+- **Input Validation**: Bean Validation on all entities and DTOs
 
 ## 🎨 Design Features
 

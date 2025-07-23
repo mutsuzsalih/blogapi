@@ -9,4 +9,7 @@ db_user = "dbuser"
 # GitHub repository configuration
 github_owner  = "username"
 github_repo   = "repository"
-github_branch = "main" 
+github_branch = "main"
+
+# SECURITY NOTE: Never commit the actual terraform.tfvars file
+# This is just an example. Copy to terraform.tfvars and update values 
